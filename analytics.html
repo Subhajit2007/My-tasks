@@ -1,11 +1,408 @@
 <!DOCTYPE html>
-<html>
-    <head>
-        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-        <title></title>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JEE Mains Tracker (T-Q-R)</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --text: #0f172a;
+            --border: #e2e8f0;
+            
+            /* Subject Colors */
+            --physics-color: #3b82f6;
+            --chemistry-color: #10b981;
+            --maths-color: #f43f5e;
+            
+            /* Status Colors */
+            --theory-color: #a855f7;  /* Purple */
+            --quest-color: #f59e0b;   /* Orange */
+            --rev-color: #10b981;     /* Green */
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
         
-    </head>
-    <body>
-        <a href="index.html">go to home</a>
-    </body>
+        body { background: var(--bg); color: var(--text); padding-bottom: 60px; }
+
+        /* HEADER */
+        header {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        }
+        
+        h1 { font-size: 1.8rem; margin-bottom: 5px; }
+        .subtitle { opacity: 0.8; font-size: 0.9rem; }
+
+        /* CONTAINER */
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+
+        /* DASHBOARD */
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+            margin-top: -30px;
+        }
+        @media (min-width: 600px) {
+            .dashboard { grid-template-columns: repeat(4, 1fr); }
+        }
+
+        .stat-card {
+            background: var(--card);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .stat-val { font-size: 1.2rem; font-weight: bold; display: block; }
+        .stat-label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+        
+        .progress-track {
+            background: #e2e8f0;
+            height: 6px;
+            border-radius: 3px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        .progress-fill { height: 100%; width: 0%; transition: width 0.5s ease; }
+
+        /* TABS */
+        .tabs { display: flex; gap: 10px; margin-bottom: 15px; justify-content: center; }
+        .tab-btn {
+            padding: 8px 16px;
+            border: none;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #64748b;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: 0.2s;
+        }
+        .tab-btn.active { background: var(--primary); color: white; }
+
+        /* CHAPTERS */
+        .chapter {
+            background: var(--card);
+            margin-bottom: 15px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .chapter-header {
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            background: white;
+            border-bottom: 1px solid transparent;
+        }
+        .chapter.open .chapter-header { border-bottom-color: var(--border); background: #f8fafc; }
+        
+        .chapter-title { font-weight: 600; font-size: 1rem; }
+        .chapter-progress { font-size: 0.8rem; color: #64748b; background: #f1f5f9; padding: 3px 8px; border-radius: 4px; }
+
+        .topic-list { display: none; padding: 0; }
+        .chapter.open .topic-list { display: block; }
+        
+        .topic-item {
+            padding: 15px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .topic-name { font-weight: 500; margin-bottom: 10px; display: block; color: #334155; }
+
+        /* THE 3-OPTION GRID */
+        .tracker-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+
+        .option-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px 5px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+            user-select: none;
+            background: #fafafa;
+        }
+
+        /* Checkbox styling */
+        .option-label input { display: none; } /* Hide default checkbox */
+        
+        /* Unchecked State styles */
+        .option-label:hover { background: #f1f5f9; }
+
+        /* Checked States - Color coding */
+        .option-label:has(input:checked) {
+            border-color: transparent;
+            color: white;
+            font-weight: 600;
+        }
+        
+        /* Theory Checked */
+        .opt-theory:has(input:checked) { background-color: var(--theory-color); box-shadow: 0 2px 5px rgba(168, 85, 247, 0.3); }
+        /* Question Checked */
+        .opt-quest:has(input:checked) { background-color: var(--quest-color); box-shadow: 0 2px 5px rgba(245, 158, 11, 0.3); }
+        /* Revision Checked */
+        .opt-rev:has(input:checked) { background-color: var(--rev-color); box-shadow: 0 2px 5px rgba(16, 185, 129, 0.3); }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>JEE Tracker Pro</h1>
+        <p class="subtitle">Theory • Questions • Revision</p>
+    </header>
+
+    <div class="container">
+        <div class="dashboard">
+            <div class="stat-card">
+                <span class="stat-val" id="totalProgress">0%</span>
+                <span class="stat-label">Total</span>
+                <div class="progress-track"><div class="progress-fill" id="totalBar" style="background: var(--text)"></div></div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-val" id="physicsProgress" style="color: var(--physics-color)">0%</span>
+                <span class="stat-label">Physics</span>
+                <div class="progress-track"><div class="progress-fill" id="physicsBar" style="background: var(--physics-color)"></div></div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-val" id="chemistryProgress" style="color: var(--chemistry-color)">0%</span>
+                <span class="stat-label">Chemistry</span>
+                <div class="progress-track"><div class="progress-fill" id="chemistryBar" style="background: var(--chemistry-color)"></div></div>
+            </div>
+            <div class="stat-card">
+                <span class="stat-val" id="mathsProgress" style="color: var(--maths-color)">0%</span>
+                <span class="stat-label">Maths</span>
+                <div class="progress-track"><div class="progress-fill" id="mathsBar" style="background: var(--maths-color)"></div></div>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('physics')">Physics</button>
+            <button class="tab-btn" onclick="switchTab('chemistry')">Chemistry</button>
+            <button class="tab-btn" onclick="switchTab('maths')">Maths</button>
+        </div>
+
+        <div id="content-area"></div>
+    </div>
+
+    <script>
+        // --- DATA: JEE MAINS SYLLABUS ---
+        const syllabusData = {
+            physics: [
+                { title: "Units and Measurements", topics: ["SI Units & Dimensions", "Errors", "Instruments (Vernier/Screw Gauge)"] },
+                { title: "Kinematics", topics: ["1D Motion", "Vectors & 2D Motion", "Projectile Motion", "Relative Velocity"] },
+                { title: "Laws of Motion", topics: ["Newton's Laws", "Friction", "Circular Motion"] },
+                { title: "Work, Energy, Power", topics: ["Work-Energy Theorem", "Potential Energy", "Collisions"] },
+                { title: "Rotational Motion", topics: ["Center of Mass", "Moment of Inertia", "Torque", "Rolling"] },
+                { title: "Gravitation", topics: ["Kepler's Laws", "Gravity Variation", "Satellites"] },
+                { title: "Solids & Fluids", topics: ["Elasticity", "Fluid Statics", "Bernoulli's Principle", "Surface Tension", "Viscosity"] },
+                { title: "Thermodynamics", topics: ["Thermal Expansion", "KTG", "Laws of Thermo", "Processes & Cycles"] },
+                { title: "Oscillations & Waves", topics: ["SHM", "Sound Waves", "Doppler Effect", "Beats"] },
+                { title: "Electrostatics", topics: ["Electric Field", "Flux & Gauss Law", "Potential", "Capacitors"] },
+                { title: "Current Electricity", topics: ["Ohm's Law", "Kirchhoff's Laws", "Instruments (Bridge/Potentiometer)"] },
+                { title: "Magnetism", topics: ["Moving Charges", "Magnetic Field", "Earth's Magnetism"] },
+                { title: "EMI & AC", topics: ["Induction", "LCR Circuits", "Resonance"] },
+                { title: "Modern Physics", topics: ["Dual Nature", "Atoms", "Nuclei", "Semiconductors"] },
+                { title: "Optics", topics: ["Ray Optics", "Wave Optics"] }
+            ],
+            chemistry: [
+                { title: "Physical Chemistry I", topics: ["Mole Concept", "Atomic Structure", "Chemical Bonding", "Gaseous State"] },
+                { title: "Physical Chemistry II", topics: ["Thermodynamics", "Equilibrium (Chemical & Ionic)", "Redox"] },
+                { title: "Physical Chemistry III", topics: ["Solid State", "Solutions", "Electrochemistry", "Kinetics", "Surface Chem"] },
+                { title: "Inorganic Chemistry I", topics: ["Periodic Table", "Chemical Bonding", "Hydrogen", "s-Block"] },
+                { title: "Inorganic Chemistry II", topics: ["p-Block (13-18)", "d and f Block", "Coordination Compounds", "Metallurgy"] },
+                { title: "Organic Chemistry I", topics: ["GOC (General Organic Chem)", "Isomerism", "Hydrocarbons"] },
+                { title: "Organic Chemistry II", topics: ["Haloalkanes/Haloarenes", "Alcohols, Phenols, Ethers", "Aldehydes & Ketones", "Amines"] },
+                { title: "Organic Chemistry III", topics: ["Biomolecules", "Polymers", "Chemistry in Everyday Life"] }
+            ],
+            maths: [
+                { title: "Algebra I", topics: ["Sets & Relations", "Functions", "Complex Numbers", "Quadratic Equations"] },
+                { title: "Algebra II", topics: ["Matrices & Determinants", "Permutation & Combination", "Binomial Theorem"] },
+                { title: "Algebra III", topics: ["Sequence & Series", "Probability", "Mathematical Reasoning"] },
+                { title: "Calculus I", topics: ["Limits", "Continuity & Differentiability", "Differentiation", "AOD (Applications)"] },
+                { title: "Calculus II", topics: ["Indefinite Integration", "Definite Integration", "Area under Curve", "Differential Equations"] },
+                { title: "Coordinate Geometry", topics: ["Straight Lines", "Circles", "Conic Sections (Parabola/Ellipse/Hyperbola)"] },
+                { title: "Vectors & 3D", topics: ["Vector Algebra", "3D Geometry"] },
+                { title: "Trigonometry", topics: ["Ratios & Identities", "Trig Equations", "Inverse Trig Functions"] },
+                { title: "Statistics", topics: ["Mean, Variance, SD"] }
+            ]
+        };
+
+        // --- STATE MANAGEMENT ---
+        const contentArea = document.getElementById('content-area');
+        let progressData = JSON.parse(localStorage.getItem('jeeTrackerV2')) || {};
+
+        function init() {
+            // First update stats to ensure dashboard is correct on load
+            updateStats();
+            // Then load the physics tab by default
+            switchTab('physics');
+        }
+
+        // --- RENDER LOGIC ---
+        function switchTab(subject) {
+            // Update Tab UI
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.innerText.toLowerCase().includes(subject === 'maths' ? 'math' : subject)) {
+                    btn.classList.add('active');
+                }
+            });
+
+            contentArea.innerHTML = '';
+            const chapters = syllabusData[subject];
+            
+            chapters.forEach((chapter, cIndex) => {
+                const chapterId = `${subject}_c${cIndex}`;
+                
+                // Calculate chapter % based on 3 subtasks per topic
+                let totalSubTasks = chapter.topics.length * 3;
+                let completedSubTasks = 0;
+
+                chapter.topics.forEach((topic, tIndex) => {
+                    const baseId = `${chapterId}_t${tIndex}`;
+                    if(progressData[`${baseId}_T`]) completedSubTasks++;
+                    if(progressData[`${baseId}_Q`]) completedSubTasks++;
+                    if(progressData[`${baseId}_R`]) completedSubTasks++;
+                });
+
+                const percent = totalSubTasks === 0 ? 0 : Math.round((completedSubTasks / totalSubTasks) * 100);
+
+                // Create Chapter Card
+                const chapterDiv = document.createElement('div');
+                chapterDiv.className = 'chapter';
+                
+                // Header
+                const header = document.createElement('div');
+                header.className = 'chapter-header';
+                header.innerHTML = `
+                    <span class="chapter-title">${chapter.title}</span>
+                    <span class="chapter-progress">${percent}%</span>
+                `;
+                
+                // Accordion Click
+                header.onclick = () => chapterDiv.classList.toggle('open');
+
+                // Topic List
+                const list = document.createElement('div');
+                list.className = 'topic-list';
+
+                chapter.topics.forEach((topic, tIndex) => {
+                    const baseId = `${chapterId}_t${tIndex}`;
+                    const item = document.createElement('div');
+                    item.className = 'topic-item';
+
+                    item.innerHTML = `
+                        <span class="topic-name">${topic}</span>
+                        <div class="tracker-options">
+                            <label class="option-label opt-theory">
+                                <input type="checkbox" onchange="toggle('${baseId}_T')" ${progressData[`${baseId}_T`] ? 'checked' : ''}>
+                                <span>📖 Theory</span>
+                            </label>
+                            <label class="option-label opt-quest">
+                                <input type="checkbox" onchange="toggle('${baseId}_Q')" ${progressData[`${baseId}_Q`] ? 'checked' : ''}>
+                                <span>✍️ Quest</span>
+                            </label>
+                            <label class="option-label opt-rev">
+                                <input type="checkbox" onchange="toggle('${baseId}_R')" ${progressData[`${baseId}_R`] ? 'checked' : ''}>
+                                <span>↺ Revision</span>
+                            </label>
+                        </div>
+                    `;
+                    list.appendChild(item);
+                });
+
+                chapterDiv.appendChild(header);
+                chapterDiv.appendChild(list);
+                contentArea.appendChild(chapterDiv);
+            });
+        }
+
+        // --- ACTIONS ---
+        window.toggle = function(id) {
+            // Toggle state in memory
+            if (progressData[id]) {
+                delete progressData[id];
+            } else {
+                progressData[id] = true;
+            }
+            
+            // Save to storage
+            localStorage.setItem('jeeTrackerV2', JSON.stringify(progressData));
+            
+            // Update Dashboard Bars
+            updateStats();
+            
+            // Refresh current view to update Chapter percentages
+            const currentSubj = document.querySelector('.tab-btn.active').innerText.toLowerCase();
+            const subjKey = currentSubj.includes('math') ? 'maths' : currentSubj;
+            switchTab(subjKey);
+        };
+
+        function updateStats() {
+            let grandTotalTasks = 0;
+            let grandDoneTasks = 0;
+
+            const subjects = ['physics', 'chemistry', 'maths'];
+
+            subjects.forEach(subj => {
+                let subjTasks = 0;
+                let subjDone = 0;
+
+                syllabusData[subj].forEach((chap, cIdx) => {
+                    chap.topics.forEach((top, tIdx) => {
+                        const baseId = `${subj}_c${cIdx}_t${tIdx}`;
+                        subjTasks += 3; // T, Q, R
+                        if(progressData[`${baseId}_T`]) subjDone++;
+                        if(progressData[`${baseId}_Q`]) subjDone++;
+                        if(progressData[`${baseId}_R`]) subjDone++;
+                    });
+                });
+
+                // Update Subject Bar
+                const subjPercent = subjTasks === 0 ? 0 : Math.round((subjDone / subjTasks) * 100);
+                
+                // FIXED: IDs now match exactly (physicsProgress, chemistryProgress, mathsProgress)
+                const textEl = document.getElementById(`${subj}Progress`);
+                const barEl = document.getElementById(`${subj}Bar`);
+                
+                if(textEl) textEl.innerText = `${subjPercent}%`;
+                if(barEl) barEl.style.width = `${subjPercent}%`;
+
+                grandTotalTasks += subjTasks;
+                grandDoneTasks += subjDone;
+            });
+
+            // Update Total Bar
+            const totalPercent = grandTotalTasks === 0 ? 0 : Math.round((grandDoneTasks / grandTotalTasks) * 100);
+            document.getElementById('totalProgress').innerText = `${totalPercent}%`;
+            document.getElementById('totalBar').style.width = `${totalPercent}%`;
+        }
+
+        // Start App
+        init();
+
+    </script>
+</body>
 </html>
