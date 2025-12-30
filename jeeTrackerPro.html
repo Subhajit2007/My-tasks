@@ -406,4 +406,171 @@
                     <span class="chapter-title"><span class="badge" style="background:${getSubjectColor(subject)}"></span>${chapter.title}</span>
                     <span class="chapter-progress">${percent}%</span>
                 `;
-         
+                  // Toggle Accordion
+                header.addEventListener('click', () => {
+                    chapterDiv.classList.toggle('open');
+                });
+
+                const topicList = document.createElement('ul');
+                topicList.className = 'topic-list';
+
+                chapter.topics.forEach((topic, tIndex) => {
+                    const topicId = `${chapterId}_t${tIndex}`;
+                    
+                    const li = document.createElement('li');
+                    li.className = 'topic-item';
+                    
+                    // Check completion for styling
+                    const isTheory = progressData[`${topicId}_th`];
+                    const isQuest = progressData[`${topicId}_qu`];
+                    const isRev = progressData[`${topicId}_rv`];
+                    
+                    if (isTheory && isQuest && isRev) {
+                        li.classList.add('fully-done');
+                    }
+
+                    // TOPIC NAME
+                    const label = document.createElement('span');
+                    label.className = 'topic-label';
+                    label.innerText = topic;
+
+                    // CHECKBOXES GROUP
+                    const group = document.createElement('div');
+                    group.className = 'task-group';
+
+                    // HELPER TO CREATE SUB-TASK
+                    const createSubTask = (suffix, labelText) => {
+                        const wrapper = document.createElement('label');
+                        wrapper.className = 'task-option';
+                        
+                        const cb = document.createElement('input');
+                        cb.type = 'checkbox';
+                        cb.id = `${topicId}_${suffix}`;
+                        cb.checked = progressData[`${topicId}_${suffix}`] || false;
+                        
+                        // Add elements to DOM
+                        const txt = document.createElement('span');
+                        txt.className = 'task-text';
+                        txt.innerText = labelText;
+                        wrapper.appendChild(cb);
+                        wrapper.appendChild(txt);
+
+                        return { wrapper, cb };
+                    };
+
+                    const t1 = createSubTask('th', '📖 Theory');
+                    const t2 = createSubTask('qu', '✍🏻 Quest');
+                    const t3 = createSubTask('rv', '↺ Revise');
+
+                    // --- ROBUST EVENT LISTENER (NO RE-RENDERS) ---
+                    [t1, t2, t3].forEach(task => {
+                        task.cb.addEventListener('change', (e) => {
+                            // 1. Update Data
+                            const suffix = task.cb.id.split('_').pop();
+                            progressData[`${topicId}_${suffix}`] = task.cb.checked;
+                            saveData();
+                            
+                            // 2. Update Global Top Stats
+                            updateStats();
+
+                            // 3. Update Visuals (Strikethrough)
+                            const allChecked = t1.cb.checked && t2.cb.checked && t3.cb.checked;
+                            if (allChecked) li.classList.add('fully-done');
+                            else li.classList.remove('fully-done');
+
+                            // 4. Update ONLY this chapter's header text
+                            updateChapterHeaderPercent(chapter, chapterId, header);
+                            
+                            // STOP PROPAGATION to prevent accordion click
+                            e.stopPropagation();
+                        });
+                        group.appendChild(task.wrapper);
+                    });
+
+                    li.appendChild(label);
+                    li.appendChild(group);
+                    topicList.appendChild(li);
+                });
+
+                chapterDiv.appendChild(header);
+                chapterDiv.appendChild(topicList);
+                contentArea.appendChild(chapterDiv);
+            });
+        }
+
+        // Helper to update just the header text without closing accordion
+        function updateChapterHeaderPercent(chapter, chapterId, headerEl) {
+            let completedUnits = 0;
+            let totalUnits = chapter.topics.length * 3;
+
+            chapter.topics.forEach((topic, tIndex) => {
+                const tid = `${chapterId}_t${tIndex}`;
+                if (progressData[`${tid}_th`]) completedUnits++;
+                if (progressData[`${tid}_qu`]) completedUnits++;
+                if (progressData[`${tid}_rv`]) completedUnits++;
+            });
+
+            const percent = totalUnits === 0 ? 0 : Math.round((completedUnits / totalUnits) * 100);
+            
+            // Safer way: just update the progress span inside the header
+            const progSpan = headerEl.querySelector('.chapter-progress');
+            if(progSpan) progSpan.innerText = `${percent}%`;
+        }
+
+        // --- UTILITY FUNCTIONS ---
+        function getSubjectColor(subj) {
+            if(subj === 'physics') return 'var(--phys-color)';
+            if(subj === 'chemistry') return 'var(--chem-color)';
+            return 'var(--math-color)';
+        }
+
+        function saveData() {
+            localStorage.setItem('jeeProgress', JSON.stringify(progressData));
+        }
+
+        function updateStats() {
+            const idMap = { 'physics': 'phys', 'chemistry': 'chem', 'maths': 'math' };
+
+            let totalUnits = 0;
+            let totalDone = 0;
+
+            ['physics', 'chemistry', 'maths'].forEach(subj => {
+                let subjUnits = 0;
+                let subjDone = 0;
+
+                syllabusData[subj].forEach((chap, cIdx) => {
+                    subjUnits += chap.topics.length * 3;
+                    chap.topics.forEach((top, tIdx) => {
+                        const tid = `${subj}_c${cIdx}_t${tIdx}`;
+                        if (progressData[`${tid}_th`]) subjDone++;
+                        if (progressData[`${tid}_qu`]) subjDone++;
+                        if (progressData[`${tid}_rv`]) subjDone++;
+                    });
+                });
+
+                // Update Subject Bar
+                const subjPercent = subjUnits === 0 ? 0 : Math.round((subjDone / subjUnits) * 100);
+                const prefix = idMap[subj];
+                
+                const progressEl = document.getElementById(`${prefix}Progress`);
+                const barEl = document.getElementById(`${prefix}Bar`);
+
+                if (progressEl) progressEl.innerText = `${subjPercent}%`;
+                if (barEl) barEl.style.width = `${subjPercent}%`;
+
+                totalUnits += subjUnits;
+                totalDone += subjDone;
+            });
+
+            // Update Total Bar
+            const totalPercent = totalUnits === 0 ? 0 : Math.round((totalDone / totalUnits) * 100);
+            document.getElementById('totalProgress').innerText = `${totalPercent}%`;
+            document.getElementById('totalBar').style.width = `${totalPercent}%`;
+        }
+
+        // Start App
+        init();
+
+    </script>
+</body>
+</html>
