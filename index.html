@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>My Tasks</title>
-        <link rel="shortcut icon" href="icon.jpg" type="image/x-icon" />
+    <link rel="shortcut icon" href="" type="image/x-icon" />
     <!-- Tailwind CSS -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <!-- React & ReactDOM -->
@@ -25,6 +25,7 @@
 </head>
 <body class="bg-gray-50 text-slate-800 font-sans">
     <div id="root"></div>
+
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
@@ -47,7 +48,11 @@
             Calendar: <g><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></g>,
             Quote: <g><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/></g>,
             AlertTriangle: <g><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></g>,
-            X: <g><path d="M18 6 6 18"/><path d="m6 6 12 12"/></g>
+            X: <g><path d="M18 6 6 18"/><path d="m6 6 12 12"/></g>,
+            Menu: <g><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></g>,
+            BarChart2: <g><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></g>,
+            Settings: <g><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></g>,
+            HelpCircle: <g><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></g>
         };
 
         const LucideIcon = ({ name, ...props }) => <Icon path={Icons[name]} {...props} />;
@@ -91,6 +96,10 @@
             const [notificationPermission, setNotificationPermission] = useState('default');
             const [itemToDelete, setItemToDelete] = useState(null);
             
+            // New Menu State
+            const [isMenuOpen, setIsMenuOpen] = useState(false);
+            const menuRef = useRef(null);
+
             const lastNotificationCount = useRef(null);
             const activeCount = todos.filter(t => !t.completed).length;
 
@@ -98,6 +107,17 @@
                 localStorage.setItem('simple-todo-list', JSON.stringify(todos));
                 localStorage.setItem('todo-last-date', getBusinessDate());
             }, [todos]);
+
+            // Close menu when clicking outside
+            useEffect(() => {
+                const handleClickOutside = (event) => {
+                    if (menuRef.current && !menuRef.current.contains(event.target)) {
+                        setIsMenuOpen(false);
+                    }
+                };
+                document.addEventListener('mousedown', handleClickOutside);
+                return () => document.removeEventListener('mousedown', handleClickOutside);
+            }, []);
 
             // Notification Logic
             useEffect(() => {
@@ -128,6 +148,7 @@
                 Notification.requestPermission().then((permission) => {
                     setNotificationPermission(permission);
                     if (permission === 'granted') new Notification("My Tasks", { body: "Notifications enabled!" });
+                    setIsMenuOpen(false); // Close menu after action
                 });
             };
 
@@ -167,343 +188,9 @@
 
             const dailyQuotes = useMemo(() => {
                 const quotes = [
-    {
-        eng: "The only way to do great work is to love what you do.",
-        engAuthor: "Steve Jobs",
-        bangla: "মহৎ কাজ করার একমাত্র উপায় হলো আপনি যা করেন তা ভালোবাসা।",
-        banglaAuthor: "স্টিভ জবস"
-    },
-    {
-        eng: "Arise, awake, and stop not till the goal is reached.",
-        engAuthor: "Swami Vivekananda",
-        bangla: "ওঠো, জাগো এবং লক্ষ্যে না পৌঁছানো পর্যন্ত থেমো না।",
-        banglaAuthor: "স্বামী বিবেকানন্দ"
-    },
-    {
-        eng: "Dream is not that which you see while sleeping it is something that does not let you sleep.",
-        engAuthor: "A.P.J. Abdul Kalam",
-        bangla: "স্বপ্ন সেটা নয় যা তুমি ঘুমিয়ে দেখো, স্বপ্ন সেটাই যা তোমাকে ঘুমোতে দেয় না।",
-        banglaAuthor: "এ পি জে আব্দুল কালাম"
-    },
-    {
-        eng: "Life is what happens when you're busy making other plans.",
-        engAuthor: "John Lennon",
-        bangla: "জীবন তাই যা ঘটে যখন আপনি অন্যান্য পরিকল্পনা করতে ব্যস্ত থাকেন।",
-        banglaAuthor: "জন লেনন"
-    },
-    {
-        eng: "You become what you believe.",
-        engAuthor: "Oprah Winfrey",
-        bangla: "তুমি যা বিশ্বাস করো, তুমি তাই হয়ে ওঠো।",
-        banglaAuthor: "অপরাহ উইনফ্রে"
-    },
-    {
-        eng: "Clouds come floating into my life, no longer to carry rain or usher storm, but to add color to my sunset sky.",
-        engAuthor: "Rabindranath Tagore",
-        bangla: "মেঘ আমার জীবনে ভেসে আসে, বৃষ্টি বা ঝড় বয়ে আনার জন্য নয়, বরং আমার গোধূলি আকাশে রঙ যোগ করতে।",
-        banglaAuthor: "রবীন্দ্রনাথ ঠাকুর"
-    },
-    {
-        eng: "Change your thoughts and you change your world.",
-        engAuthor: "Norman Vincent Peale",
-        bangla: "আপনার চিন্তা পরিবর্তন করুন এবং আপনি আপনার বিশ্ব পরিবর্তন করবেন।",
-        banglaAuthor: "নরম্যান ভিনসেন্ট পিল"
-    },
-    {
-        eng: "It does not matter how slowly you go as long as you do not stop.",
-        engAuthor: "Confucius",
-        bangla: "আপনি কত ধীরে চলছেন তা গুরুত্বপূর্ণ নয়, যতক্ষণ না আপনি থামছেন।",
-        banglaAuthor: "কনফুসিয়াস"
-    },
-    {
-        eng: "Everything you can imagine is real.",
-        engAuthor: "Pablo Picasso",
-        bangla: "আপনি যা কল্পনা করতে পারেন তার সবই বাস্তব।",
-        banglaAuthor: "পাবলো পিকাসো"
-    },
-    {
-        eng: "Failure is the pillar of success.",
-        engAuthor: "Proverb",
-        bangla: "ব্যর্থতাই সাফল্যের স্তম্ভ।",
-        banglaAuthor: "প্রবাদ"
-    },
-    {
-        eng: "Happiness depends upon ourselves.",
-        engAuthor: "Aristotle",
-        bangla: "সুখ আমাদের নিজেদের উপর নির্ভর করে।",
-        banglaAuthor: "এরিস্টটল"
-    },
-    {
-        eng: "Do what you can, with what you have, where you are.",
-        engAuthor: "Theodore Roosevelt",
-        bangla: "তোমার যা আছে, তা দিয়েই, যেখানে আছো সেখান থেকেই, যা পারো করো।",
-        banglaAuthor: "থিওডোর রুজভেল্ট"
-    },
-    {
-        eng: "Be the change that you wish to see in the world.",
-        engAuthor: "Mahatma Gandhi",
-        bangla: "আপনি বিশ্বে যে পরিবর্তন দেখতে চান, নিজেই সেই পরিবর্তন হন।",
-        banglaAuthor: "মহাত্মা গান্ধী"
-    },
-    {
-        eng: "In the middle of difficulty lies opportunity.",
-        engAuthor: "Albert Einstein",
-        bangla: "কঠিন পরিস্থিতির মধ্যেই সুযোগ লুকিয়ে থাকে।",
-        banglaAuthor: "আলবার্ট আইনস্টাইন"
-    },
-    {
-        eng: "Don't watch the clock; do what it does. Keep going.",
-        engAuthor: "Sam Levenson",
-        bangla: "ঘড়ির দিকে তাকিও না; ঘড়ি যা করে তাই করো। চলতে থাকো।",
-        banglaAuthor: "স্যাম লেভেনসন"
-    },
-    {
-        eng: "If you can dream it, you can do it.",
-        engAuthor: "Walt Disney",
-        bangla: "যদি তুমি এটি স্বপ্ন দেখতে পারো, তবে তুমি এটি করতেও পারো।",
-        banglaAuthor: "ওয়াল্ট ডিজনি"
-    },
-    {
-        eng: "Knowledge is power.",
-        engAuthor: "Francis Bacon",
-        bangla: "জ্ঞানই শক্তি।",
-        banglaAuthor: "ফ্রান্সিস বেকন"
-    },
-    {
-        eng: "A journey of a thousand miles begins with a single step.",
-        engAuthor: "Lao Tzu",
-        bangla: "হাজার মাইলের যাত্রা একটি পদক্ষেপ দিয়েই শুরু হয়।",
-        banglaAuthor: "লাও জু"
-    },
-    {
-        eng: "Talk is cheap. Show me the code.",
-        engAuthor: "Linus Torvalds",
-        bangla: "কথা বলা সহজ। আমাকে কোড দেখান।",
-        banglaAuthor: "লিনাস টরভাল্ডস"
-    },
-    {
-        eng: "Simplicity is the soul of wit.",
-        engAuthor: "William Shakespeare",
-        bangla: "সংক্ষিপ্ততাই বুদ্ধিমত্তার প্রাণ।",
-        banglaAuthor: "উইলিয়াম শেক্সপিয়ার"
-    },
-    {
-        eng: "Tough times never last, but tough people do.",
-        engAuthor: "Robert H. Schuller",
-        bangla: "কঠিন সময় বেশিক্ষণ থাকে না, কিন্তু শক্ত মানুষরা টিকে থাকে।",
-        banglaAuthor: "রবার্ট এইচ শুলার"
-    },
-    {
-        eng: "Stay hungry, stay foolish.",
-        engAuthor: "Steve Jobs",
-        bangla: "ক্ষুধার্থ থাকো, বোকা থাকো (শেখার আগ্রহ জিইয়ে রাখো)।",
-        banglaAuthor: "স্টিভ জবস"
-    },
-    {
-        eng: "Do not wait for leaders; do it alone, person to person.",
-        engAuthor: "Mother Teresa",
-        bangla: "নেতার জন্য অপেক্ষা করবেন না; একাই করুন, ব্যক্তি থেকে ব্যক্তিতে।",
-        banglaAuthor: "মাদার টেরেসা"
-    },
-    {
-        eng: "Creativity is intelligence having fun.",
-        engAuthor: "Albert Einstein",
-        bangla: "সৃজনশীলতা হলো বুদ্ধিমত্তার কৌতুক।",
-        banglaAuthor: "আলবার্ট আইনস্টাইন"
-    },
-    {
-        eng: "You miss 100% of the shots you don't take.",
-        engAuthor: "Wayne Gretzky",
-        bangla: "তুমি ১০০% সুযোগ মিস করবে যদি তুমি চেষ্টাই না করো।",
-        banglaAuthor: "ওয়েন গ্রেটস্কি"
-    },
-    {
-        eng: "Whether you think you can or you think you can't, you're right.",
-        engAuthor: "Henry Ford",
-        bangla: "আপনি যদি ভাবেন আপনি পারবেন, অথবা যদি ভাবেন পারবেন না, দুই ক্ষেত্রেই আপনি সঠিক।",
-        banglaAuthor: "হেনরি ফোর্ড"
-    },
-    {
-        eng: "I have not failed. I've just found 10,000 ways that won't work.",
-        engAuthor: "Thomas Edison",
-        bangla: "আমি ব্যর্থ হইনি। আমি শুধু ১০,০০০ টি উপায় খুঁজে পেয়েছি যা কাজ করবে না।",
-        banglaAuthor: "টমাস এডিসন"
-    },
-    {
-        eng: "The best revenge is massive success.",
-        engAuthor: "Frank Sinatra",
-        bangla: "সেরা প্রতিশোধ হলো বিশাল সাফল্য।",
-        banglaAuthor: "ফ্রাঙ্ক সিনাত্রা"
-    },
-    {
-        eng: "Time is money.",
-        engAuthor: "Benjamin Franklin",
-        bangla: "সময়ই অর্থ।",
-        banglaAuthor: "বেঞ্জামিন ফ্র্যাঙ্কলিন"
-    },
-    {
-        eng: "Faith is the bird that feels the light when the dawn is still dark.",
-        engAuthor: "Rabindranath Tagore",
-        bangla: "বিশ্বাস হলো সেই পাখি যা ভোর হওয়ার আগেই আলোর অনুভব করতে পারে।",
-        banglaAuthor: "রবীন্দ্রনাথ ঠাকুর"
-    },
-    {
-        eng: "Give me blood and I will give you freedom!",
-        engAuthor: "Netaji Subhas Chandra Bose",
-        bangla: "তোমরা আমাকে রক্ত দাও, আমি তোমাদের স্বাধীনতা দেব!",
-        banglaAuthor: "নেতাজি সুভাষচন্দ্র বসু"
-    },
-    {
-        eng: "Action is the foundational key to all success.",
-        engAuthor: "Pablo Picasso",
-        bangla: "কাজই হলো সমস্ত সাফল্যের মূল চাবিকাঠি।",
-        banglaAuthor: "পাবলো পিকাসো"
-    },
-    {
-        eng: "Don't let yesterday take up too much of today.",
-        engAuthor: "Will Rogers",
-        bangla: "গতকালকে আজকের খুব বেশি সময় নিতে দিও না।",
-        banglaAuthor: "উইল রজার্স"
-    },
-    {
-        eng: "Identify your problems, but give your power and energy to solutions.",
-        engAuthor: "Tony Robbins",
-        bangla: "আপনার সমস্যাগুলি চিহ্নিত করুন, তবে আপনার শক্তি এবং মনোযোগ সমাধানের দিকে দিন।",
-        banglaAuthor: "টনি রবিন্স"
-    },
-    {
-        eng: "Mistakes are proof that you are trying.",
-        engAuthor: "Unknown",
-        bangla: "ভুলগুলো প্রমাণ করে যে আপনি চেষ্টা করছেন।",
-        banglaAuthor: "অজানা"
-    },
-    {
-        eng: "If you want to shine like a sun, first burn like a sun.",
-        engAuthor: "A.P.J. Abdul Kalam",
-        bangla: "যদি সূর্যের মতো দীপ্তিমান হতে চাও, তবে প্রথমে সূর্যের মতো পুড়তে শেখো।",
-        banglaAuthor: "এ পি জে আব্দুল কালাম"
-    },
-    {
-        eng: "Better late than never.",
-        engAuthor: "Geoffrey Chaucer",
-        bangla: "কখনো না করার চেয়ে দেরিতে করা ভালো।",
-        banglaAuthor: "জিওফ্রে চসার"
-    },
-    {
-        eng: "Hope is a waking dream.",
-        engAuthor: "Aristotle",
-        bangla: "আশা হলো জেগে দেখা স্বপ্ন।",
-        banglaAuthor: "এরিস্টটল"
-    },
-    {
-        eng: "Where there is love there is life.",
-        engAuthor: "Mahatma Gandhi",
-        bangla: "যেখানে ভালোবাসা আছে, সেখানেই জীবন আছে।",
-        banglaAuthor: "মহাত্মা গান্ধী"
-    },
-    {
-        eng: "Silence is sometimes the best answer.",
-        engAuthor: "Dalai Lama",
-        bangla: "নীরবতা মাঝে মাঝে সেরা উত্তর।",
-        banglaAuthor: "দালাই লামা"
-    },
-    {
-        eng: "Turn your wounds into wisdom.",
-        engAuthor: "Oprah Winfrey",
-        bangla: "তোমার আঘাতগুলোকে জ্ঞানে পরিণত করো।",
-        banglaAuthor: "অপরাহ উইনফ্রে"
-    },
-    {
-        eng: "It always seems impossible until it's done.",
-        engAuthor: "Nelson Mandela",
-        bangla: "কাজটি শেষ না হওয়া পর্যন্ত তা অসম্ভব বলেই মনে হয়।",
-        banglaAuthor: "নেলসন ম্যান্ডেলা"
-    },
-    {
-        eng: "Don't judge each day by the harvest you reap but by the seeds that you plant.",
-        engAuthor: "Robert Louis Stevenson",
-        bangla: "প্রতিটি দিনকে ফসলের বিচার করো না, বরং তুমি যে বীজগুলো রোপণ করেছ তা দিয়ে বিচার করো।",
-        banglaAuthor: "রবার্ট লুই স্টিভেনসন"
-    },
-    {
-        eng: "Start where you are. Use what you have. Do what you can.",
-        engAuthor: "Arthur Ashe",
-        bangla: "যেখানে আছো সেখান থেকেই শুরু করো। যা আছে তাই ব্যবহার করো। যা পারো তাই করো।",
-        banglaAuthor: "আর্থার অ্যাশ"
-    },
-    {
-        eng: "Education is the most powerful weapon which you can use to change the world.",
-        engAuthor: "Nelson Mandela",
-        bangla: "শিক্ষা হলো সবচেয়ে শক্তিশালী অস্ত্র যা আপনি বিশ্বকে পরিবর্তন করতে ব্যবহার করতে পারেন।",
-        banglaAuthor: "নেলসন ম্যান্ডেলা"
-    },
-    {
-        eng: "Without struggle, there is no success.",
-        engAuthor: "Frederick Douglass",
-        bangla: "সংগ্রাম ছাড়া সাফল্য আসে না।",
-        banglaAuthor: "ফ্রেডরিক ডগলাস"
-    },
-    {
-        eng: "The root of suffering is attachment.",
-        engAuthor: "Buddha",
-        bangla: "দুঃখের মূল কারণ হলো আসক্তি।",
-        banglaAuthor: "গৌতম বুদ্ধ"
-    },
-    {
-        eng: "Patience is a virtue.",
-        engAuthor: "William Langland",
-        bangla: "ধৈর্য একটি মহৎ গুণ।",
-        banglaAuthor: "উইলিয়াম ল্যাংল্যান্ড"
-    },
-    {
-        eng: "Cleanliness is next to Godliness.",
-        engAuthor: "John Wesley",
-        bangla: "পরিষ্কার-পরিচ্ছন্নতা ঈমানের অঙ্গ।",
-        banglaAuthor: "জন ওয়েসলি"
-    },
-    {
-        eng: "Honesty is the best policy.",
-        engAuthor: "Benjamin Franklin",
-        bangla: "সততাই সর্বোৎকৃষ্ট পন্থা।",
-        banglaAuthor: "বেঞ্জামিন ফ্র্য্কলিন"           
-    },
-    { 
-        eng: "It always seems impossible until it's done.", 
-        engAuthor: "Nelson Mandela", 
-        bangla: "কোনো কাজ শেষ না হওয়া পর্যন্ত তা অসম্ভব মনে হয়।", 
-        banglaAuthor: "নেলসন ম্যান্ডেলা" 
-    },
-    { 
-        eng: "Don't watch the clock; do what it does. Keep going.", 
-        engAuthor: "Sam Levenson", 
-        bangla: "ঘড়ির দিকে তাকিও না; সে যা করে তুমিও তাই করো। চলতে থাকো।",
-         banglaAuthor: "স্যাম লেভেনসন"
-    },
-    { 
-        eng: "The future depends on what you do today.", 
-        engAuthor: "Mahatma Gandhi", 
-        bangla: "ভবিষ্যৎ নির্ভর করে তুমি আজ কী করছো তার ওপর।",
-         banglaAuthor: "মহাত্মা গান্ধী" 
-    },
-    { 
-        eng: "Success is not final, failure is not fatal: It is the courage to continue that counts.", 
-        engAuthor: "Winston Churchill",
-         bangla: "সাফল্য চূড়ান্ত নয়, ব্যর্থতাও মরণঘাতী নয়: এগিয়ে যাওয়ার সাহসই হলো আসল।", 
-        banglaAuthor: "উইনস্টন চার্চিল"
-    },
-    {
-         eng: "What you do today can improve all your tomorrows.",
-         engAuthor: "Ralph Marston", 
-        bangla: "তুমি আজ যা করবে তা তোমার আগামীকে উন্নত করতে পারে।", 
-        banglaAuthor: "রালফ মার্স্টন"
-    },
-    { 
-        eng: "A year from now you may wish you had started today.", 
-        engAuthor: "Karen Lamb", 
-        bangla: "এক বছর পর তোমার মনে হতে পারে, ইশ! যদি আজ শুরু করতাম।",
-         banglaAuthor: "ক্যারেন ল্যাম্ব" 
-    }    
-                                ];
+                    { eng: "What you do today can improve all your tomorrows.", engAuthor: "Ralph Marston", bangla: "তুমি আজ যা করবে তা তোমার আগামীকে উন্নত করতে পারে।", banglaAuthor: "রালফ মার্স্টন" },
+                    { eng: "A year from now you may wish you had started today.", engAuthor: "Karen Lamb", bangla: "এক বছর পর তোমার মনে হতে পারে, ইশ! যদি আজ শুরু করতাম।", banglaAuthor: "ক্যারেন ল্যাম্ব" }  
+                ];
                 const dateStr = getBusinessDate();
                 let hash = 0;
                 for (let i = 0; i < dateStr.length; i++) hash = dateStr.charCodeAt(i) + ((hash << 5) - hash);
@@ -526,10 +213,41 @@
                                 <span className="text-slate-400">Reset: 4 AM</span>
                             </div>
                         </div>
-                        <div className="flex gap-2">
-                             {notificationPermission !== 'granted' && (
-                                <button onClick={requestNotificationPermission} className="bg-amber-100 text-amber-600 p-2 rounded-lg"><LucideIcon name="Bell" size={18} /></button>
-                            )}
+                        <div className="flex gap-2 relative">
+                            {/* Menu Button */}
+                            <div ref={menuRef} className="relative">
+                                <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="bg-slate-100 text-slate-600 p-2 rounded-lg hover:bg-slate-200 transition-colors active:scale-95">
+                                    <LucideIcon name="Menu" size={18} />
+                                </button>
+                                
+                                {/* Dropdown Menu */}
+                                {isMenuOpen && (
+                                    <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2">
+                                        <div className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wider">Options</div>
+                                        
+                                        {/* Option 1: New HTML File */}
+                                        <a href="analytics.html" className="flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors">
+                                            <LucideIcon name="BarChart2" size={16} />
+                                            <span>Analytics Dashboard</span>
+                                        </a>
+
+                                        {/* Option 2: Notifications */}
+                                        <button onClick={requestNotificationPermission} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors text-left">
+                                            <LucideIcon name="Bell" size={16} />
+                                            <span>
+                                                {notificationPermission === 'granted' ? 'Notifications On' : 'Enable Notifications'}
+                                            </span>
+                                        </button>
+
+                                        {/* Option 3: Help */}
+                                        <button onClick={() => { setIsMenuOpen(false); setIsAboutOpen(true); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors text-left">
+                                            <LucideIcon name="HelpCircle" size={16} />
+                                            <span>About & Help</span>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+
                             <button onClick={() => setIsAddOpen(true)} className="bg-indigo-600 text-white px-3 py-2 rounded-lg font-semibold shadow-sm flex items-center gap-1 active:scale-95">
                                 <LucideIcon name="Plus" size={18} /> New
                             </button>
@@ -572,7 +290,7 @@
                                                     <span className={`text-lg leading-snug break-words ${getTaskColorClass(todo)}`}>{todo.text}</span>
                                                     <div className="flex items-center gap-2 mt-1">
                                                         {todo.type === 'daily' && <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-600"><LucideIcon name="Repeat" size={10} /> Daily</span>}
-                                                        {todo.type === 'single' && todo.dueDate && !todo.completed && (
+                         {todo.type === 'single' && todo.dueDate && !todo.completed && (
                                                             <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${getTaskColorClass(todo).includes('red') ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-500'}`}>
                                                                 <LucideIcon name="Calendar" size={10} /> {new Date(todo.dueDate).toLocaleDateString()}
                                                             </span>
@@ -639,7 +357,7 @@
                                     <div>
                                         <h2 className="text-2xl font-bold text-slate-900">About My Tasks</h2>
                                         <div className="flex items-center justify-center gap-2 mt-2 text-sm font-medium text-slate-500">
-                                            <span className="bg-slate-100 px-2 py-0.5 rounded-md">v1.2.0</span>
+                                            <span className="bg-slate-100 px-2 py-0.5 rounded-md">v1.2.8</span>
                                             <span>•</span>
                                             <span>Updated: {new Date().toLocaleDateString()}</span>
                                         </div>
