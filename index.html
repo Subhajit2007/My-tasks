@@ -567,8 +567,14 @@
                                             <LucideIcon name="BarChart2" size={16} />
                                             <span>JEE Tracker Pro</span>
                                         </a>
+                                        
+                                        {/* Option 2: New HTML File */}
+                                        <a href="countdowns.html" className="flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors">
+                                            <LucideIcon name="BarChart2" size={16} />
+                                            <span>Countdowns</span>
+                                        </a>
 
-                                        {/* Option 2: Notifications */}
+                                        {/* Option 3: Notifications */}
                                         <button onClick={requestNotificationPermission} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors text-left">
                                             <LucideIcon name="Bell" size={16} />
                                             <span>
@@ -576,7 +582,7 @@
                                             </span>
                                         </button>
 
-                                        {/* Option 3: Help */}
+                                        {/* Option 4: Help */}
                                         <button onClick={() => { setIsMenuOpen(false); setIsAboutOpen(true); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors text-left">
                                             <LucideIcon name="HelpCircle" size={16} />
                                             <span>About & Help</span>
