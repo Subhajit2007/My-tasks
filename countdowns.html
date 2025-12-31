@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Countdown</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Smooth fade in for cards */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .countdown-card {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        .time-box {
+            background: #f8fafc;
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-10">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-bold text-gray-800 tracking-tight">
+                <i class="fas fa-hourglass-half text-indigo-600 mr-2"></i>Countdowns
+            </h1>
+            <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg shadow transition duration-200 flex items-center font-medium">
+                <i class="fas fa-plus mr-2"></i> Add Event
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow p-4 sm:p-6">
+        <div id="countdown-grid" class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Countdowns will be injected here via JS -->
+            <div id="empty-state" class="col-span-1 md:col-span-2 lg:col-span-3 text-center py-20 hidden">
+                <div class="text-gray-400 mb-4">
+                    <i class="far fa-calendar-plus text-6xl"></i>
+                </div>
+                <h3 class="text-xl font-medium text-gray-600">No countdowns yet</h3>
+                <p class="text-gray-500 mt-2">Click "Add Event" to start tracking time.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Add Event Modal Overlay -->
+    <div id="modal-overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-all duration-300 scale-95 opacity-0" id="modal-content">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-gray-800">New Countdown</h2>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 transition">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+
+                <form id="add-form" onsubmit="handleAdd(event)">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Event Name</label>
+                        <input type="text" id="event-title" required placeholder="e.g., Birthday, Vacation" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Target Date & Time</label>
+                        <input type="datetime-local" id="event-date" required
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition">
+                    </div>
+
+                    <div class="flex justify-end gap-3">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg shadow transition font-medium">
+                            Create Countdown
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal-overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-opacity duration-300">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-sm transform transition-all duration-300 scale-95 opacity-0" id="delete-modal-content">
+            <div class="p-6 text-center">
+                <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-trash-alt text-red-600 text-xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-gray-800 mb-2">Delete Event?</h3>
+                <p class="text-gray-500 text-sm mb-6">Are you sure you want to remove this countdown? This action cannot be undone.</p>
+                
+                <div class="flex justify-center gap-3">
+                    <button onclick="closeDeleteModal()" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition font-medium">
+                        Cancel
+                    </button>
+                    <button onclick="confirmDeleteAction()" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg shadow transition font-medium">
+                        Yes, Delete It
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-4 right-4 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg transform translate-y-20 transition duration-300 z-50">
+        Event added successfully!
+    </div>
+
+    <script>
+        // State
+        let countdowns = JSON.parse(localStorage.getItem('myCountdowns')) || [];
+        let pendingDeleteId = null;
+        
+        // DOM Elements
+        const grid = document.getElementById('countdown-grid');
+        const emptyState = document.getElementById('empty-state');
+        const modalOverlay = document.getElementById('modal-overlay');
+        const modalContent = document.getElementById('modal-content');
+        const deleteModalOverlay = document.getElementById('delete-modal-overlay');
+        const deleteModalContent = document.getElementById('delete-modal-content');
+        const toast = document.getElementById('toast');
+
+        // Initial Load
+        renderCountdowns();
+        setInterval(updateTimers, 1000);
+
+        // --- Functions ---
+
+        function toggleEmptyState() {
+            if (countdowns.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+            }
+        }
+
+        function saveToLocal() {
+            localStorage.setItem('myCountdowns', JSON.stringify(countdowns));
+        }
+
+        function openModal() {
+            modalOverlay.classList.remove('hidden');
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+            
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('event-date').min = now.toISOString().slice(0,16);
+        }
+
+        function closeModal() {
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modalOverlay.classList.add('hidden');
+                document.getElementById('add-form').reset();
+            }, 300);
+        }
+
+        // --- Delete Logic ---
+
+        function promptDelete(id) {
+            pendingDeleteId = id;
+            deleteModalOverlay.classList.remove('hidden');
+            setTimeout(() => {
+                deleteModalContent.classList.remove('scale-95', 'opacity-0');
+                deleteModalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeDeleteModal() {
+            deleteModalContent.classList.remove('scale-100', 'opacity-100');
+            deleteModalContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                deleteModalOverlay.classList.add('hidden');
+                pendingDeleteId = null;
+            }, 300);
+        }
+
+        function confirmDeleteAction() {
+            if (pendingDeleteId) {
+                countdowns = countdowns.filter(c => c.id !== pendingDeleteId);
+                saveToLocal();
+                renderCountdowns();
+                showToast('Countdown deleted');
+            }
+            closeDeleteModal();
+        }
+
+        // --- Add Logic ---
+
+        function handleAdd(e) {
+            e.preventDefault();
+            const title = document.getElementById('event-title').value;
+            const dateStr = document.getElementById('event-date').value;
+            
+            const newCountdown = {
+                id: Date.now(),
+                title: title,
+                date: dateStr,
+                createdAt: new Date().toISOString()
+            };
+
+            countdowns.push(newCountdown);
+            saveToLocal();
+            renderCountdowns();
+            closeModal();
+            showToast('Countdown added!');
+        }
+
+        function showToast(message) {
+            toast.textContent = message;
+            toast.classList.remove('translate-y-20');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20');
+            }, 3000);
+        }
+
+        function calculateTimeLeft(targetDate) {
+            const total = Date.parse(targetDate) - Date.parse(new Date());
+            const seconds = Math.floor((total / 1000) % 60);
+            const minutes = Math.floor((total / 1000 / 60) % 60);
+            const hours = Math.floor((total / (1000 * 60 * 60)) % 24);
+            const days = Math.floor(total / (1000 * 60 * 60 * 24));
+            
+            return { total, days, hours, minutes, seconds };
+        }
+
+        function getColorClass(totalMs) {
+            const oneDay = 1000 * 60 * 60 * 24;
+            
+            if (totalMs <= 0) return 'text-gray-800'; // Finished
+            if (totalMs < oneDay) return 'text-red-600'; // Less than 1 day (Red)
+            if (totalMs < oneDay * 3) return 'text-orange-500'; // Less than 3 days (Orange)
+            if (totalMs < oneDay * 7) return 'text-yellow-500'; // Less than 7 days (Yellow)
+            return 'text-gray-800'; // Far away (Black)
+        }
+
+        function createTimeBox(value, label) {
+            const displayValue = (label !== 'Days' && value < 10 && value >= 0) ? `0${value}` : value;
+            return `
+                <div class="time-box flex flex-col items-center justify-center p-2 sm:p-3">
+                    <span class="text-xl sm:text-2xl font-bold text-indigo-600 font-mono leading-none">${displayValue}</span>
+                    <span class="text-xs text-gray-500 uppercase tracking-wide mt-1">${label}</span>
+                </div>
+            `;
+        }
+
+        function renderCountdowns() {
+            // Clear current list (keeping the empty state div)
+            Array.from(grid.children).forEach(child => {
+                if(child.id !== 'empty-state') child.remove();
+            });
+
+            toggleEmptyState();
+
+            // Sort by nearest date
+            countdowns.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            countdowns.forEach(c => {
+                const card = document.createElement('div');
+                card.className = 'countdown-card glass-panel rounded-xl p-5 relative overflow-hidden group';
+                card.id = `card-${c.id}`;
+
+                // Background decoration
+                card.innerHTML = `
+                    <div class="absolute top-2 right-2 z-20">
+                        <button onclick="promptDelete(${c.id})" class="text-red-500 hover:text-white bg-red-50 hover:bg-red-500 border border-red-100 rounded-lg p-2 transition duration-200 shadow-sm">
+                            <i class="fas fa-trash-alt text-lg"></i>
+                        </button>
+                    </div>
+                    
+                    <h3 id="title-${c.id}" class="text-lg font-bold text-gray-800 mb-1 truncate pr-12 transition-colors duration-300">${c.title}</h3>
+                    <p class="text-sm text-gray-500 mb-4 flex items-center">
+                        <i class="far fa-calendar-alt mr-2"></i>
+                        ${new Date(c.date).toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit' })}
+                    </p>
+
+                    <div class="grid grid-cols-4 gap-2 timer-container" data-date="${c.date}" data-id="${c.id}">
+                        <!-- Time boxes injected by updateTimers -->
+                    </div>
+                    
+                    <div class="message-container hidden text-center py-2">
+                        <span class="inline-block px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                            <i class="fas fa-check-circle mr-1"></i> Time's Up!
+                        </span>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            
+            // Immediate update
+            updateTimers();
+        }
+
+        function updateTimers() {
+            const containers = document.querySelectorAll('.timer-container');
+            
+            containers.forEach(container => {
+                const targetDate = container.getAttribute('data-date');
+                const id = container.getAttribute('data-id');
+                const timeLeft = calculateTimeLeft(targetDate);
+                const parentCard = container.closest('.countdown-card');
+                const messageContainer = parentCard.querySelector('.message-container');
+                const titleElement = document.getElementById(`title-${id}`);
+
+                // Update Title Color dynamically
+                if(titleElement) {
+                    const colorClass = getColorClass(timeLeft.total);
+                    // Remove all potential color classes first
+                    titleElement.classList.remove('text-gray-800', 'text-yellow-500', 'text-orange-500', 'text-red-600');
+                    titleElement.classList.add(colorClass);
+                }
+
+                if (timeLeft.total <= 0) {
+                    container.classList.add('hidden');
+                    messageContainer.classList.remove('hidden');
+                } else {
+                    container.classList.remove('hidden');
+                    messageContainer.classList.add('hidden');
+                    
+                    container.innerHTML = `
+                        ${createTimeBox(timeLeft.days, 'Days')}
+                        ${createTimeBox(timeLeft.hours, 'Hrs')}
+                        ${createTimeBox(timeLeft.minutes, 'Min')}
+                        ${createTimeBox(timeLeft.seconds, 'Sec')}
+                    `;
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+
+
