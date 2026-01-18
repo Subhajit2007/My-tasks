@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CONTINUUM</title>
+    <style>
+        :root {
+            --bg: #ffffff;
+            --card: #f9f9f9;
+            --text-main: #000000;
+            --text-muted: #a1a1a6;
+            --accent: #007aff;
+            --dot-past: #000000;
+            --dot-today: #ff3b30;
+            --dot-future: #ebebeb;
+            --radius: 14px;
+            --danger: #ff3b30;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            padding: 40px 20px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 440px;
+            position: relative;
+        }
+
+        h1.brand {
+            text-align: center;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.4em;
+            font-size: 2rem;
+            margin-bottom: 50px;
+            margin-top: 20px;
+        }
+
+        .primary-btn {
+            background: var(--text-main);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: var(--radius);
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn {
+            background: #f2f2f7;
+            color: var(--text-main);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.8rem;
+            margin-bottom: 25px;
+        }
+
+        .task-card {
+            background: var(--card);
+            padding: 24px;
+            border-radius: var(--radius);
+            margin-top: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .task-name { font-weight: 700; font-size: 1.1rem; }
+
+        .dot-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 30px 0;
+            justify-content: flex-start;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .dot.past { background-color: var(--dot-past); }
+        .dot.today { 
+            background-color: var(--dot-today); 
+            box-shadow: 0 0 12px rgba(255, 59, 48, 0.6);
+            animation: blink 1.5s infinite ease-in-out;
+        }
+        .dot.future { background-color: var(--dot-future); }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(1.2); }
+        }
+
+        .progress-text {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            text-align: center;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        /* Delete Section Styles */
+        .delete-wrapper {
+            position: absolute;
+            top: -10px;
+            right: 0;
+            text-align: right;
+        }
+
+        .terminate-trigger {
+            color: #eeeeee;
+            font-size: 0.6rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: color 0.3s;
+            user-select: none;
+        }
+
+        .terminate-trigger:hover { color: var(--text-muted); }
+
+        /* Pop-up Confirmation Box */
+        .confirm-popup {
+            position: absolute;
+            top: 20px;
+            right: 0;
+            background: white;
+            border: 1px solid #eee;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            z-index: 10;
+            width: 160px;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .confirm-popup p {
+            margin: 0;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-main);
+            text-align: center;
+        }
+
+        .btn-confirm-final {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-cancel-final {
+            background: #f2f2f7;
+            color: var(--text-main);
+            border: none;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            cursor: pointer;
+        }
+
+        /* Modal / Overlay Generic */
+        .overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal { width: 85%; max-width: 350px; text-align: center; }
+        input {
+            width: 100%;
+            padding: 14px;
+            margin: 8px 0 20px 0;
+            border: 1px solid #e5e5ea;
+            border-radius: 10px;
+            box-sizing: border-box;
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <h1 class="brand">CONTINUUM</h1>
+
+        <div id="home-view">
+            <button class="primary-btn" onclick="openModal()">NEW OBJECTIVE</button>
+            <div id="task-list"></div>
+        </div>
+
+        <div id="detail-view" class="hidden">
+            <div class="delete-wrapper">
+                <button class="terminate-trigger" id="terminate-btn">Terminate</button>
+                <div id="confirm-popup" class="confirm-popup">
+                    <p>ARE YOU SURE?</p>
+                    <button class="btn-confirm-final" id="delete-action">DELETE</button>
+                    <button class="btn-cancel-final" onclick="hideDeletePopup()">CANCEL</button>
+                </div>
+            </div>
+            
+            <button class="back-btn" onclick="history.back()">← BACK</button>
+            
+            <h2 id="detail-title" style="font-weight: 800; font-size: 1.8rem; margin: 0;"></h2>
+            
+            <div id="dot-container" class="dot-grid"></div>
+            <div id="progress-percentage" class="progress-text"></div>
+        </div>
+    </div>
+
+    <div id="modal-overlay" class="overlay hidden">
+        <div class="modal">
+            <h2>Set Parameter</h2>
+            <input type="text" id="task-name" placeholder="Objective Name">
+            <input type="date" id="start-date">
+            <input type="number" id="duration" placeholder="Duration (Days)">
+            <button class="primary-btn" onclick="saveTask()">INITIALIZE</button>
+            <p onclick="closeModal()" style="cursor:pointer; font-size:0.8rem; color:var(--text-muted); margin-top:20px;">CANCEL</p>
+        </div>
+    </div>
+
+    <script>
+        let tasks = JSON.parse(localStorage.getItem('continuum_v3')) || [];
+        let currentEditingId = null;
+
+        window.onpopstate = () => {
+            const state = history.state;
+            if (state && state.view === 'detail') showDetailView(state.id);
+            else showHomeView();
+        };
+
+        function openModal() {
+            document.getElementById('modal-overlay').classList.remove('hidden');
+            document.getElementById('start-date').valueAsDate = new Date();
+        }
+
+        function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
+
+        function saveTask() {
+            const name = document.getElementById('task-name').value;
+            const start = document.getElementById('start-date').value;
+            const dur = document.getElementById('duration').value;
+            if(!name || !start || !dur) return;
+
+            const task = { id: Date.now(), name, start, duration: parseInt(dur) };
+            tasks.push(task);
+            localStorage.setItem('continuum_v3', JSON.stringify(tasks));
+            renderTasks();
+            closeModal();
+        }
+
+        function renderTasks() {
+            const list = document.getElementById('task-list');
+            list.innerHTML = '';
+            tasks.forEach(t => {
+                const card = document.createElement('div');
+                card.className = 'task-card';
+                card.onclick = () => {
+                    history.pushState({view: 'detail', id: t.id}, "");
+                    showDetailView(t.id);
+                };
+                card.innerHTML = `
+                    <div class="task-name">${t.name.toUpperCase()}</div>
+                    <div style="color: #ddd">›</div>
+                `;
+                list.appendChild(card);
+            });
+        }
+
+        function showDetailView(id) {
+            const task = tasks.find(t => t.id === id);
+            if(!task) return history.back();
+            currentEditingId = id;
+
+            document.getElementById('home-view').classList.add('hidden');
+            document.getElementById('detail-view').classList.remove('hidden');
+            document.getElementById('detail-title').innerText = task.name.toUpperCase();
+            hideDeletePopup();
+
+            const grid = document.getElementById('dot-container');
+            grid.innerHTML = '';
+
+            const start = new Date(task.start);
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            start.setHours(0,0,0,0);
+
+            const diff = today - start;
+            const dayIndex = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+            for(let i=0; i < task.duration; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'dot';
+                if(i < dayIndex) dot.classList.add('past');
+                else if(i === dayIndex) dot.classList.add('today');
+                else dot.classList.add('future');
+                grid.appendChild(dot);
+            }
+
+            let percent = Math.min(Math.max(Math.round((dayIndex / task.duration) * 100), 0), 100);
+            document.getElementById('progress-percentage').innerText = `${percent}% OF JOURNEY COMPLETE`;
+        }
+
+        // --- NEW DELETE LOGIC ---
+        
+        const terminateBtn = document.getElementById('terminate-btn');
+        const deleteActionBtn = document.getElementById('delete-action');
+
+        // 1. Double click the label to show pop-up
+        terminateBtn.ondblclick = () => {
+            document.getElementById('confirm-popup').style.display = 'flex';
+        };
+
+        // 2. Click the confirm button to finalize
+        deleteActionBtn.onclick = () => {
+            tasks = tasks.filter(t => t.id !== currentEditingId);
+            localStorage.setItem('continuum_v3', JSON.stringify(tasks));
+            showHomeView();
+            history.pushState({view: 'home'}, "");
+        };
+
+        function hideDeletePopup() {
+            document.getElementById('confirm-popup').style.display = 'none';
+        }
+
+        function showHomeView() {
+            document.getElementById('home-view').classList.remove('hidden');
+            document.getElementById('detail-view').classList.add('hidden');
+            renderTasks();
+        }
+
+        renderTasks();
+    </script>
+</body>
+</html>
