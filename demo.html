@@ -3,74 +3,86 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Universal Notification Fix</title>
+    <title>Notification Force-Fix</title>
     <style>
-        body { font-family: -apple-system, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #0f172a; color: white; margin: 0; text-align: center; }
-        .card { background: #1e293b; padding: 2rem; border-radius: 20px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); width: 80%; max-width: 400px; }
-        button { background: #22c55e; color: white; border: none; padding: 16px 32px; font-size: 18px; font-weight: bold; border-radius: 12px; cursor: pointer; width: 100%; transition: 0.3s; }
-        button:active { transform: scale(0.98); background: #16a34a; }
-        #log { margin-top: 20px; font-size: 12px; color: #94a3b8; text-align: left; background: #0f172a; padding: 10px; border-radius: 8px; max-height: 100px; overflow-y: auto; }
+        body { font-family: system-ui, sans-serif; background: #000; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .box { background: #111; padding: 30px; border-radius: 20px; border: 1px solid #333; text-align: center; width: 90%; max-width: 400px; }
+        button { background: #007aff; color: white; border: none; padding: 15px; width: 100%; border-radius: 10px; font-size: 18px; font-weight: 600; cursor: pointer; margin-bottom: 15px; }
+        .status-box { text-align: left; font-family: monospace; font-size: 12px; background: #000; padding: 10px; border-radius: 8px; color: #0f0; }
+        .critical { color: #ff453a; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div class="card">
-        <h1>Winner Alert! 🏆</h1>
-        <p>This version uses a Service Worker to bypass mobile blocks.</p>
-        <button id="goBtn">CLAIM CONGRATS</button>
-        <div id="log">System ready...</div>
-    </div>
+<div class="box">
+    <h2>Step 1: Diagnostics</h2>
+    <div id="diag" class="status-box">Checking system...</div>
+    
+    <h2 style="margin-top:20px;">Step 2: Trigger</h2>
+    <button id="askBtn">ACTIVATE NOTIFICATIONS</button>
+    <p style="font-size: 12px; color: #888;">If nothing happens, check the red text above.</p>
+</div>
 
-    <script>
-        const logDiv = document.getElementById('log');
-        const btn = document.getElementById('goBtn');
+<script>
+    const diag = document.getElementById('diag');
+    const btn = document.getElementById('askBtn');
 
-        function logger(msg) {
-            logDiv.innerHTML += `<div>> ${msg}</div>`;
-            logDiv.scrollTop = logDiv.scrollHeight;
+    // --- DIAGNOSTICS ---
+    function runDiagnostics() {
+        let html = "";
+        
+        // Check 1: HTTPS (The #1 Reason for "Stuck")
+        const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
+        html += `Protocol: ${window.location.protocol} ${isSecure ? '✅' : '<span class="critical">❌ (MUST BE HTTPS)</span>'}<br>`;
+
+        // Check 2: Existing Permission
+        html += `Current Permission: ${Notification.permission}<br>`;
+        if (Notification.permission === 'denied') {
+            html += `<span class="critical">❌ ERROR: You previously blocked this site. Reset the lock icon in URL bar!</span><br>`;
         }
 
-        // 1. Register a "Dummy" Service Worker (Required for Mobile)
+        // Check 3: Mobile Safari / iOS
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        if (isIOS && !window.navigator.standalone) {
+            html += `<span class="critical">⚠️ iOS DETECTED: You must "Add to Home Screen" to use this.</span><br>`;
+        }
+
+        diag.innerHTML = html;
+    }
+
+    runDiagnostics();
+
+    // --- THE FIX ---
+    btn.addEventListener('click', async () => {
+        diag.innerHTML += "<div>> Button clicked...</div>";
+
+        // Modern browsers require a "Service Worker" for the request to work on mobile
         if ('serviceWorker' in navigator) {
-            const swCode = `self.addEventListener('notificationclick', function(event) { event.notification.close(); });`;
-            const blob = new Blob([swCode], {type: 'text/javascript'});
-            const swUrl = URL.createObjectURL(blob);
-            
-            navigator.serviceWorker.register(swUrl).then(() => {
-                logger("Service Worker registered.");
-            });
+            try {
+                const sw = 'data:text/javascript;base64,' + btoa('self.addEventListener("push", () => {});');
+                await navigator.serviceWorker.register(sw);
+                diag.innerHTML += "<div>> Worker Registered.</div>";
+            } catch (e) {
+                diag.innerHTML += `<div class="critical">> Worker Fail: ${e.message}</div>`;
+            }
         }
 
-        btn.addEventListener('click', async () => {
-            logger("Requesting permission...");
-            
+        // Requesting Permission
+        try {
             const permission = await Notification.requestPermission();
+            diag.innerHTML += `<div>> Result: ${permission}</div>`;
             
-            if (permission !== 'granted') {
-                logger("Permission denied by user.");
-                alert("Please enable notifications in settings!");
-                return;
+            if (permission === 'granted') {
+                new Notification("CONGRATULATIONS! 🎉", {
+                    body: "Permission Granted! You are a champion.",
+                    icon: "https://cdn-icons-png.flaticon.com/512/3119/3119338.png"
+                });
             }
+        } catch (err) {
+            diag.innerHTML += `<div class="critical">> Request Fail: ${err.message}</div>`;
+        }
+    });
+</script>
 
-            const title = "CONGRATULATIONS! 🎉";
-            const options = {
-                body: "You cracked the code! This notification works on mobile.",
-                icon: "https://cdn-icons-png.flaticon.com/512/3119/3119338.png",
-                vibrate: [200, 100, 200],
-                badge: "https://cdn-icons-png.flaticon.com/512/3119/3119338.png"
-            };
-
-            // 2. Try the modern "ShowNotification" method (Best for Mobile)
-            if ('serviceWorker' in navigator) {
-                const registration = await navigator.serviceWorker.ready;
-                registration.showNotification(title, options);
-                logger("Sent via Service Worker.");
-            } else {
-                // Fallback for old desktop browsers
-                new Notification(title, options);
-                logger("Sent via Legacy Constructor.");
-            }
-        });
-    </script>
 </body>
 </html>
