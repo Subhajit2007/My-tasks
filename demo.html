@@ -3,80 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notification Fixer</title>
+    <title>Universal Notification Fix</title>
     <style>
-        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; background: #121212; color: white; margin: 0; }
-        .container { background: #1e1e1e; padding: 2rem; border-radius: 15px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid #333; }
-        button { background: #00c853; color: black; border: none; padding: 15px 30px; font-size: 18px; font-weight: bold; border-radius: 50px; cursor: pointer; margin-top: 20px; transition: 0.2s; }
-        button:active { transform: scale(0.95); }
-        #status { margin-top: 20px; font-size: 12px; color: #888; border-top: 1px solid #333; pt: 10px; width: 100%; }
-        .error { color: #ff5252; }
+        body { font-family: -apple-system, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #0f172a; color: white; margin: 0; text-align: center; }
+        .card { background: #1e293b; padding: 2rem; border-radius: 20px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); width: 80%; max-width: 400px; }
+        button { background: #22c55e; color: white; border: none; padding: 16px 32px; font-size: 18px; font-weight: bold; border-radius: 12px; cursor: pointer; width: 100%; transition: 0.3s; }
+        button:active { transform: scale(0.98); background: #16a34a; }
+        #log { margin-top: 20px; font-size: 12px; color: #94a3b8; text-align: left; background: #0f172a; padding: 10px; border-radius: 8px; max-height: 100px; overflow-y: auto; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h1>Push Tester</h1>
-        <p>Click below for the Congratulations alert.</p>
-        <button id="congratsBtn">🎉 CONGRATULATIONS!</button>
-        
-        <div id="status">
-            Checking system compatibility...
-        </div>
+    <div class="card">
+        <h1>Winner Alert! 🏆</h1>
+        <p>This version uses a Service Worker to bypass mobile blocks.</p>
+        <button id="goBtn">CLAIM CONGRATS</button>
+        <div id="log">System ready...</div>
     </div>
 
     <script>
-        const btn = document.getElementById('congratsBtn');
-        const statusDiv = document.getElementById('status');
+        const logDiv = document.getElementById('log');
+        const btn = document.getElementById('goBtn');
 
-        // 1. Update status immediately on load
-        function updateStatus(msg, isError = false) {
-            statusDiv.innerHTML = isError ? `<span class="error">Error: ${msg}</span>` : `Status: ${msg}`;
-            console.log(msg);
+        function logger(msg) {
+            logDiv.innerHTML += `<div>> ${msg}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
         }
 
-        if (!("Notification" in window)) {
-            updateStatus("This browser doesn't support notifications.", true);
-        } else {
-            updateStatus(`Permission is currently "${Notification.permission}"`);
+        // 1. Register a "Dummy" Service Worker (Required for Mobile)
+        if ('serviceWorker' in navigator) {
+            const swCode = `self.addEventListener('notificationclick', function(event) { event.notification.close(); });`;
+            const blob = new Blob([swCode], {type: 'text/javascript'});
+            const swUrl = URL.createObjectURL(blob);
+            
+            navigator.serviceWorker.register(swUrl).then(() => {
+                logger("Service Worker registered.");
+            });
         }
 
-        // 2. The Notification Function
-        async function fireNotification() {
-            // Check if we are on a secure context
-            if (window.location.protocol === 'file:') {
-                alert("Note: Notifications often fail when opening a file directly. Try using a local server (HTTP/HTTPS).");
-            }
-
-            // Request permission
+        btn.addEventListener('click', async () => {
+            logger("Requesting permission...");
+            
             const permission = await Notification.requestPermission();
-            updateStatus(`Permission set to: ${permission}`);
-
-            if (permission === "granted") {
-                const options = {
-                    body: "YOU DID IT! You successfully triggered a notification! 🏆✨",
-                    icon: "https://cdn-icons-png.flaticon.com/512/3119/3119338.png",
-                    vibrate: [200, 100, 200, 100, 200], // Vibrate phone
-                    tag: "congrats-alert", // Overwrites old ones so it doesn't spam
-                    renotify: true // Force vibrate/sound even if tag is the same
-                };
-
-                try {
-                    const n = new Notification("CONGRATULATIONS!", options);
-                    
-                    n.onclick = () => {
-                        window.focus();
-                        n.close();
-                    };
-                } catch (err) {
-                    updateStatus("Failed to create notification. (Are you on mobile Safari?)", true);
-                }
-            } else if (permission === "denied") {
-                alert("You blocked notifications! Click the 'Lock' icon in your browser URL bar to Reset Permission.");
+            
+            if (permission !== 'granted') {
+                logger("Permission denied by user.");
+                alert("Please enable notifications in settings!");
+                return;
             }
-        }
 
-        btn.addEventListener('click', fireNotification);
+            const title = "CONGRATULATIONS! 🎉";
+            const options = {
+                body: "You cracked the code! This notification works on mobile.",
+                icon: "https://cdn-icons-png.flaticon.com/512/3119/3119338.png",
+                vibrate: [200, 100, 200],
+                badge: "https://cdn-icons-png.flaticon.com/512/3119/3119338.png"
+            };
+
+            // 2. Try the modern "ShowNotification" method (Best for Mobile)
+            if ('serviceWorker' in navigator) {
+                const registration = await navigator.serviceWorker.ready;
+                registration.showNotification(title, options);
+                logger("Sent via Service Worker.");
+            } else {
+                // Fallback for old desktop browsers
+                new Notification(title, options);
+                logger("Sent via Legacy Constructor.");
+            }
+        });
     </script>
 </body>
 </html>
