@@ -3,86 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notification Force-Fix</title>
+    <title>The Final Fix</title>
     <style>
-        body { font-family: system-ui, sans-serif; background: #000; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .box { background: #111; padding: 30px; border-radius: 20px; border: 1px solid #333; text-align: center; width: 90%; max-width: 400px; }
-        button { background: #007aff; color: white; border: none; padding: 15px; width: 100%; border-radius: 10px; font-size: 18px; font-weight: 600; cursor: pointer; margin-bottom: 15px; }
-        .status-box { text-align: left; font-family: monospace; font-size: 12px; background: #000; padding: 10px; border-radius: 8px; color: #0f0; }
-        .critical { color: #ff453a; font-weight: bold; }
+        body { font-family: sans-serif; background: #0f172a; color: white; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: #1e293b; padding: 30px; border-radius: 20px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        button { background: #22c55e; color: white; border: none; padding: 20px 40px; font-size: 20px; border-radius: 15px; cursor: pointer; font-weight: bold; }
+        #status { margin-top: 20px; color: #94a3b8; font-size: 14px; }
     </style>
 </head>
 <body>
 
-<div class="box">
-    <h2>Step 1: Diagnostics</h2>
-    <div id="diag" class="status-box">Checking system...</div>
-    
-    <h2 style="margin-top:20px;">Step 2: Trigger</h2>
-    <button id="askBtn">ACTIVATE NOTIFICATIONS</button>
-    <p style="font-size: 12px; color: #888;">If nothing happens, check the red text above.</p>
-</div>
+    <div class="card">
+        <h1>It's Ready 🏆</h1>
+        <button id="notifyBtn">SEND CONGRATS</button>
+        <div id="status">Initializing...</div>
+    </div>
 
-<script>
-    const diag = document.getElementById('diag');
-    const btn = document.getElementById('askBtn');
+    <script>
+        const status = document.getElementById('status');
+        const btn = document.getElementById('notifyBtn');
 
-    // --- DIAGNOSTICS ---
-    function runDiagnostics() {
-        let html = "";
-        
-        // Check 1: HTTPS (The #1 Reason for "Stuck")
-        const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
-        html += `Protocol: ${window.location.protocol} ${isSecure ? '✅' : '<span class="critical">❌ (MUST BE HTTPS)</span>'}<br>`;
-
-        // Check 2: Existing Permission
-        html += `Current Permission: ${Notification.permission}<br>`;
-        if (Notification.permission === 'denied') {
-            html += `<span class="critical">❌ ERROR: You previously blocked this site. Reset the lock icon in URL bar!</span><br>`;
-        }
-
-        // Check 3: Mobile Safari / iOS
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        if (isIOS && !window.navigator.standalone) {
-            html += `<span class="critical">⚠️ iOS DETECTED: You must "Add to Home Screen" to use this.</span><br>`;
-        }
-
-        diag.innerHTML = html;
-    }
-
-    runDiagnostics();
-
-    // --- THE FIX ---
-    btn.addEventListener('click', async () => {
-        diag.innerHTML += "<div>> Button clicked...</div>";
-
-        // Modern browsers require a "Service Worker" for the request to work on mobile
-        if ('serviceWorker' in navigator) {
-            try {
-                const sw = 'data:text/javascript;base64,' + btoa('self.addEventListener("push", () => {});');
-                await navigator.serviceWorker.register(sw);
-                diag.innerHTML += "<div>> Worker Registered.</div>";
-            } catch (e) {
-                diag.innerHTML += `<div class="critical">> Worker Fail: ${e.message}</div>`;
+        // 1. Register the external Service Worker file
+        async function registerSW() {
+            if ('serviceWorker' in navigator) {
+                try {
+                    await navigator.serviceWorker.register('sw.js');
+                    status.innerText = "Service Worker: Active ✅";
+                } catch (e) {
+                    status.innerText = "SW Error: " + e.message;
+                }
+            } else {
+                status.innerText = "Service Workers not supported.";
             }
         }
 
-        // Requesting Permission
-        try {
+        registerSW();
+
+        btn.addEventListener('click', async () => {
+            // Check permission again
             const permission = await Notification.requestPermission();
-            diag.innerHTML += `<div>> Result: ${permission}</div>`;
             
             if (permission === 'granted') {
-                new Notification("CONGRATULATIONS! 🎉", {
-                    body: "Permission Granted! You are a champion.",
-                    icon: "https://cdn-icons-png.flaticon.com/512/3119/3119338.png"
-                });
+                const registration = await navigator.serviceWorker.getRegistration();
+                
+                if (registration) {
+                    // THIS IS THE FIX: Using the registration instead of "new Notification"
+                    registration.showNotification("CONGRATULATIONS! 🎉", {
+                        body: "You bypassed the Illegal Constructor error! Great job.",
+                        icon: "https://cdn-icons-png.flaticon.com/512/3119/3119338.png",
+                        vibrate: [200, 100, 200],
+                        badge: "https://cdn-icons-png.flaticon.com/512/3119/3119338.png"
+                    });
+                } else {
+                    alert("Service worker not found. Refresh and try again.");
+                }
+            } else {
+                alert("Permission is " + permission);
             }
-        } catch (err) {
-            diag.innerHTML += `<div class="critical">> Request Fail: ${err.message}</div>`;
-        }
-    });
-</script>
-
+        });
+    </script>
 </body>
 </html>
