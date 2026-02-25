@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focus Study Tracker</title>
+    <style>
+        :root {
+            --bg-color: #f3f4f6; 
+            --card-bg: #FFFFFF; 
+            --primary-blue: #4169E1; 
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 2rem 1rem;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 850px;
+        }
+
+        /* Initial Page Load Animation */
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            animation: fadeUp 0.6s ease-out forwards;
+        }
+
+        .header h1 {
+            font-weight: 800;
+            font-size: 2.8rem;
+            letter-spacing: -1px;
+            margin: 0;
+            color: var(--text-main);
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease;
+            
+            /* Apply cascade animation */
+            opacity: 0;
+            animation: fadeUp 0.6s ease-out forwards;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 20px -5px rgba(65, 105, 225, 0.1);
+        }
+
+        /* Stagger the card animations */
+        .card:nth-child(1) { animation-delay: 0.1s; }
+        .card:nth-child(2) { animation-delay: 0.2s; }
+        .card:nth-child(3) { animation-delay: 0.3s; }
+        .card:nth-child(4) { animation-delay: 0.4s; }
+
+        .main-timer {
+            grid-column: 1 / -1;
+            padding: 3rem 2rem;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .digital-section {
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .timer-display {
+            font-size: clamp(3.5rem, 10vw, 5.5rem); 
+            font-weight: 800;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: -2px;
+            margin: 1rem 0;
+            color: var(--text-main);
+        }
+
+        /* Analog Clock Styling */
+        .analog-clock {
+            width: 220px;
+            height: 220px;
+            background-color: #1e1e1e;
+            border-radius: 50%;
+            position: relative;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .clock-number {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            color: #d1d5db;
+            font-size: 1.2rem;
+            font-weight: 500;
+            padding-top: 10px;
+            box-sizing: border-box;
+        }
+
+        .hand {
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            transform-origin: bottom;
+            border-radius: 4px;
+            transform: translateX(-50%) rotate(0deg);
+        }
+
+        .hour-hand { width: 5px; height: 60px; background: #FFFFFF; z-index: 3; }
+        .minute-hand { width: 3px; height: 85px; background: #FFFFFF; z-index: 4; }
+        
+        /* Realistic ticking physics for second hand */
+        .second-hand { 
+            width: 2px; 
+            height: 95px; 
+            background: var(--primary-blue); 
+            z-index: 5; 
+            transition: transform 0.1s cubic-bezier(0.4, 2.08, 0.55, 0.44);
+        }
+        
+        .center-dot {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: var(--primary-blue);
+            border-radius: 50%;
+            z-index: 6;
+            border: 2px solid #1e1e1e;
+        }
+
+        /* Breathing Animation for Active Timer */
+        @keyframes pulse-shadow {
+            0% { box-shadow: 0 0 0 0 rgba(65, 105, 225, 0.2); }
+            70% { box-shadow: 0 0 0 15px rgba(65, 105, 225, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(65, 105, 225, 0); }
+        }
+        .main-timer.is-running {
+            border-color: var(--primary-blue);
+            animation: fadeUp 0.6s ease-out forwards, pulse-shadow 2s infinite;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+        }
+
+        .stat-val {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-top: 0.5rem;
+            color: var(--primary-blue);
+            display: inline-block;
+        }
+
+        /* Number Update Animation */
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+        .pop-anim {
+            animation: pop 0.3s ease-out;
+        }
+
+        /* Buttons - Reduced size & added hover effects */
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 10px 22px; /* Smaller padding */
+            font-size: 0.95rem; /* Slightly smaller text */
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            width: 100%;
+            max-width: 200px; /* Reduced width */
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(65, 105, 225, 0.25);
+        }
+        
+        .btn:active {
+            transform: translateY(1px);
+            box-shadow: 0 2px 5px rgba(65, 105, 225, 0.15);
+        }
+
+        .btn-blue {
+            background: var(--primary-blue);
+            color: var(--card-bg);
+            border: 2px solid var(--primary-blue);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--primary-blue);
+            border: 2px solid var(--border-color);
+        }
+        .btn-outline:hover { border-color: var(--primary-blue); }
+
+        /* Modal */
+        #manualModal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(8px);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        #manualModal.show { display: flex; opacity: 1; }
+
+        .modal-content {
+            background: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 20px;
+            width: 300px; /* Slimmer modal */
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--border-color);
+            transform: scale(0.95) translateY(20px);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        #manualModal.show .modal-content { transform: scale(1) translateY(0); }
+
+        .input-group {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin: 1.5rem 0 2rem 0;
+        }
+
+        .input-wrapper { display: flex; flex-direction: column; align-items: center; }
+
+        .input-wrapper input {
+            width: 65px;
+            height: 55px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            background: var(--bg-color);
+            color: var(--primary-blue);
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .input-wrapper input:focus { 
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(65, 105, 225, 0.1);
+        }
+        
+        .input-wrapper span { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem; font-weight: bold;}
+        
+        .modal-actions { display: flex; flex-direction: column; gap: 0.5rem; align-items: center; }
+        .modal-actions .btn { margin: 0; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>Focus</h1>
+        </div>
+
+        <div class="dashboard">
+            <div class="card main-timer" id="timerCard">
+                <div class="digital-section">
+                    <span class="stat-label">CURRENT SESSION</span>
+                    <div class="timer-display" id="display">00:00:00</div>
+                    
+                    <div class="btn-group">
+                        <button id="startBtn" class="btn btn-blue">Start Timer</button>
+                        <button id="stopBtn" class="btn btn-blue" style="background:#ef4444; border-color:#ef4444; display:none; box-shadow: none;">Stop Timer</button>
+                        <button id="manualBtn" class="btn btn-outline">Add Offline Time</button>
+                    </div>
+                </div>
+
+                <div class="analog-clock" id="clockFace">
+                    <div class="hand hour-hand" id="hourHand"></div>
+                    <div class="hand minute-hand" id="minuteHand"></div>
+                    <div class="hand second-hand" id="secondHand"></div>
+                    <div class="center-dot"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <span class="stat-label">Daily Focus</span><br>
+                <div class="stat-val" id="dailyStat">0h 0m</div>
+            </div>
+
+            <div class="card">
+                <span class="stat-label">Weekly Total</span><br>
+                <div class="stat-val" id="weeklyStat">0h 0m</div>
+            </div>
+
+            <div class="card">
+                <span class="stat-label">Personal Best</span><br>
+                <div class="stat-val" id="maxStat">0h 0m</div>
+            </div>
+        </div>
+    </div>
+
+    <div id="manualModal">
+        <div class="modal-content">
+            <h3 style="margin-top:0; color:var(--text-main);">Log Offline Time</h3>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">Time spent studying away from screens.</p>
+            
+            <div class="input-group">
+                <div class="input-wrapper">
+                    <input type="number" id="manualHours" placeholder="00" min="0" max="23">
+                    <span>HOURS</span>
+                </div>
+                <div style="font-size: 2rem; font-weight: bold; padding-top: 8px; color:var(--text-muted);">:</div>
+                <div class="input-wrapper">
+                    <input type="number" id="manualMins" placeholder="00" min="0" max="59">
+                    <span>MINS</span>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="btn btn-blue" onclick="saveManualTime()">Save Time</button>
+                <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Analog Clock Logic ---
+        function createClockNumbers() {
+            const clockFace = document.getElementById('clockFace');
+            for (let i = 1; i <= 12; i++) {
+                const num = document.createElement('div');
+                num.className = 'clock-number';
+                num.style.transform = `rotate(${i * 30}deg)`;
+                
+                const span = document.createElement('span');
+                span.style.display = 'inline-block';
+                span.style.transform = `rotate(-${i * 30}deg)`;
+                span.innerText = i;
+                
+                num.appendChild(span);
+                clockFace.appendChild(num);
+            }
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const h = now.getHours() % 12;
+            const m = now.getMinutes();
+            const s = now.getSeconds();
+
+            const hourDeg = (h * 30) + (m * 0.5);
+            const minuteDeg = (m * 6) + (s * 0.1);
+            const secondDeg = s * 6;
+
+            document.getElementById('hourHand').style.transform = `translateX(-50%) rotate(${hourDeg}deg)`;
+            document.getElementById('minuteHand').style.transform = `translateX(-50%) rotate(${minuteDeg}deg)`;
+            
+            // Fix for the 360 to 0 degree rewind jump
+            const secondHand = document.getElementById('secondHand');
+            if (s === 0) {
+                secondHand.style.transition = 'none';
+            } else if (s === 1) {
+                secondHand.style.transition = 'transform 0.1s cubic-bezier(0.4, 2.08, 0.55, 0.44)';
+            }
+            secondHand.style.transform = `translateX(-50%) rotate(${secondDeg}deg)`;
+        }
+
+        createClockNumbers();
+        setInterval(updateClock, 1000);
+        updateClock();
+
+
+        // --- Study Timer Logic ---
+        let timer;
+        let seconds = 0;
+        
+        let stats = JSON.parse(localStorage.getItem('studyStats')) || {
+            daily: 0,
+            weekly: 0,
+            max: 0,
+            lastDate: new Date().toDateString()
+        };
+
+        const display = document.getElementById('display');
+        const timerCard = document.getElementById('timerCard');
+
+        function formatTime(sec) {
+            const h = Math.floor(sec / 3600);
+            const m = Math.floor((sec % 3600) / 60);
+            const s = sec % 60;
+            return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+        }
+
+        function formatStat(sec) {
+            const h = Math.floor(sec / 3600);
+            const m = Math.floor((sec % 3600) / 60);
+            return `${h}h ${m}m`;
+        }
+
+        function animateNumbers() {
+            const vals = document.querySelectorAll('.stat-val');
+            vals.forEach(val => {
+                val.classList.remove('pop-anim');
+                void val.offsetWidth; // Trigger reflow
+                val.classList.add('pop-anim');
+            });
+        }
+
+        function updateUI() {
+            const today = new Date().toDateString();
+            if (stats.lastDate !== today) {
+                stats.daily = 0;
+                stats.lastDate = today;
+            }
+
+            document.getElementById('dailyStat').innerText = formatStat(stats.daily);
+            document.getElementById('weeklyStat').innerText = formatStat(stats.weekly);
+            document.getElementById('maxStat').innerText = formatStat(stats.max);
+            localStorage.setItem('studyStats', JSON.stringify(stats));
+        }
+
+        // Live Timer Controls
+        document.getElementById('startBtn').onclick = function() {
+            this.style.display = 'none';
+            document.getElementById('stopBtn').style.display = 'block';
+            timerCard.classList.add('is-running');
+            
+            timer = setInterval(() => {
+                seconds++;
+                display.innerText = formatTime(seconds);
+            }, 1000);
+        };
+
+        document.getElementById('stopBtn').onclick = function() {
+            this.style.display = 'none';
+            document.getElementById('startBtn').style.display = 'block';
+            timerCard.classList.remove('is-running');
+            clearInterval(timer);
+            
+            stats.daily += seconds;
+            stats.weekly += seconds;
+            if (seconds > stats.max) stats.max = seconds;
+            
+            seconds = 0;
+            display.innerText = "00:00:00";
+            updateUI();
+            animateNumbers();
+        };
+
+        // Modal Logic
+        const modal = document.getElementById('manualModal');
+
+        document.getElementById('manualBtn').onclick = () => {
+            modal.style.display = 'flex';
+            setTimeout(() => modal.classList.add('show'), 10);
+        };
+
+        function closeModal() {
+            modal.classList.remove('show');
+            setTimeout(() => modal.style.display = 'none', 300);
+        }
+
+        function saveManualTime() {
+            const h = parseInt(document.getElementById('manualHours').value) || 0;
+            const m = parseInt(document.getElementById('manualMins').value) || 0;
+            const totalSec = (h * 3600) + (m * 60);
+
+            if (totalSec > 0) {
+                stats.daily += totalSec;
+                stats.weekly += totalSec;
+                updateUI();
+                animateNumbers();
+                
+                document.getElementById('manualHours').value = '';
+                document.getElementById('manualMins').value = '';
+                closeModal();
+            }
+        }
+
+        updateUI();
+    </script>
+</body>
+</html>
