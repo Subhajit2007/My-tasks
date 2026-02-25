@@ -6,16 +6,17 @@
     <title>CONTINUUM</title>
     <style>
         :root {
+            /* White, Dark Gray/Black Theme with Red Accents */
             --bg: #ffffff;
-            --card: #f9f9f9;
-            --text-main: #000000;
-            --text-muted: #a1a1a6;
-            --accent: #007aff;
-            --dot-past: #000000;
-            --dot-today: #ff3b30;
-            --dot-future: #ebebeb;
+            --card: #f7f7f7; 
+            --text-main: #111111;
+            --text-muted: #888888;
+            --accent: #111111;
+            --dot-past: #222222;
+            --dot-today: #ff3b30; /* Vivid Red */
+            --dot-future: #e5e5ea;
             --radius: 14px;
-            --danger: #ff3b30;
+            --danger: #ff3b30; /* Vivid Red */
         }
 
         body {
@@ -51,21 +52,25 @@
             border: none;
             padding: 16px;
             border-radius: var(--radius);
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
             width: 100%;
             font-size: 0.9rem;
             letter-spacing: 1px;
             transition: all 0.3s ease;
         }
+        
+        .primary-btn:hover {
+            opacity: 0.85;
+        }
 
         .back-btn {
-            background: #f2f2f7;
+            background: var(--card);
             color: var(--text-main);
             border: none;
             padding: 10px 20px;
             border-radius: 8px;
-            font-weight: 600;
+            font-weight: 700;
             cursor: pointer;
             font-size: 0.8rem;
             margin-bottom: 25px;
@@ -80,9 +85,14 @@
             justify-content: space-between;
             align-items: center;
             cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        .task-card:hover {
+            transform: scale(1.02);
         }
 
-        .task-name { font-weight: 700; font-size: 1.1rem; }
+        .task-name { font-weight: 800; font-size: 1.1rem; }
 
         .dot-grid {
             display: flex;
@@ -101,6 +111,7 @@
         .dot.past { background-color: var(--dot-past); }
         .dot.today { 
             background-color: var(--dot-today); 
+            /* Red glow shadow */
             box-shadow: 0 0 12px rgba(255, 59, 48, 0.6);
             animation: blink 1.5s infinite ease-in-out;
         }
@@ -119,6 +130,7 @@
             text-align: center;
             width: 100%;
             margin-top: 20px;
+            font-weight: 700;
         }
 
         /* Delete Section Styles */
@@ -130,8 +142,8 @@
         }
 
         .terminate-trigger {
-            color: #eeeeee;
-            font-size: 0.6rem;
+            color: #cccccc;
+            font-size: 0.65rem;
             background: none;
             border: none;
             cursor: pointer;
@@ -139,9 +151,10 @@
             letter-spacing: 1px;
             transition: color 0.3s;
             user-select: none;
+            font-weight: 700;
         }
 
-        .terminate-trigger:hover { color: var(--text-muted); }
+        .terminate-trigger:hover { color: var(--danger); }
 
         /* Pop-up Confirmation Box */
         .confirm-popup {
@@ -149,13 +162,13 @@
             top: 20px;
             right: 0;
             background: white;
-            border: 1px solid #eee;
+            border: 1px solid #eeeeee;
             padding: 15px;
             border-radius: 12px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
             z-index: 10;
             width: 160px;
-            display: none; /* Hidden by default */
+            display: none; 
             flex-direction: column;
             gap: 10px;
         }
@@ -163,7 +176,7 @@
         .confirm-popup p {
             margin: 0;
             font-size: 0.7rem;
-            font-weight: 600;
+            font-weight: 800;
             color: var(--text-main);
             text-align: center;
         }
@@ -175,18 +188,19 @@
             padding: 8px;
             border-radius: 6px;
             font-size: 0.7rem;
-            font-weight: 700;
+            font-weight: 800;
             cursor: pointer;
         }
 
         .btn-cancel-final {
-            background: #f2f2f7;
+            background: var(--card);
             color: var(--text-main);
             border: none;
             padding: 8px;
             border-radius: 6px;
             font-size: 0.7rem;
             cursor: pointer;
+            font-weight: 700;
         }
 
         /* Modal / Overlay Generic */
@@ -202,13 +216,36 @@
         }
 
         .modal { width: 85%; max-width: 350px; text-align: center; }
+        
+        .input-group {
+            text-align: left;
+            margin-bottom: 20px;
+        }
+        
+        .input-group label {
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-main);
+            margin-left: 4px;
+        }
+
         input {
             width: 100%;
             padding: 14px;
-            margin: 8px 0 20px 0;
-            border: 1px solid #e5e5ea;
+            margin-top: 8px;
+            border: 1px solid #dddddd;
             border-radius: 10px;
             box-sizing: border-box;
+            color: var(--text-main);
+            font-family: inherit;
+            font-weight: 600;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: var(--text-main);
         }
 
         .hidden { display: none !important; }
@@ -236,7 +273,7 @@
             
             <button class="back-btn" onclick="history.back()">← BACK</button>
             
-            <h2 id="detail-title" style="font-weight: 800; font-size: 1.8rem; margin: 0;"></h2>
+            <h2 id="detail-title" style="font-weight: 900; font-size: 1.8rem; margin: 0; text-transform: uppercase;"></h2>
             
             <div id="dot-container" class="dot-grid"></div>
             <div id="progress-percentage" class="progress-text"></div>
@@ -245,17 +282,29 @@
 
     <div id="modal-overlay" class="overlay hidden">
         <div class="modal">
-            <h2>Set Parameter</h2>
-            <input type="text" id="task-name" placeholder="Objective Name">
-            <input type="date" id="start-date">
-            <input type="number" id="duration" placeholder="Duration (Days)">
+            <h2 style="margin-bottom: 25px; font-weight: 900; text-transform: uppercase; font-size: 1.6rem; letter-spacing: 1px;">SET PARAMETERS</h2>
+            
+            <div class="input-group">
+                <input type="text" id="task-name" placeholder="Objective Name">
+            </div>
+            
+            <div class="input-group">
+                <label for="start-date">Start Date</label>
+                <input type="date" id="start-date">
+            </div>
+            
+            <div class="input-group">
+                <label for="end-date">End Date</label>
+                <input type="date" id="end-date">
+            </div>
+
             <button class="primary-btn" onclick="saveTask()">INITIALIZE</button>
-            <p onclick="closeModal()" style="cursor:pointer; font-size:0.8rem; color:var(--text-muted); margin-top:20px;">CANCEL</p>
+            <p onclick="closeModal()" style="cursor:pointer; font-size:0.8rem; font-weight: 800; color:var(--text-muted); margin-top:20px; letter-spacing: 1px;">CANCEL</p>
         </div>
     </div>
 
     <script>
-        let tasks = JSON.parse(localStorage.getItem('continuum_v3')) || [];
+        let tasks = JSON.parse(localStorage.getItem('continuum')) || [];
         let currentEditingId = null;
 
         window.onpopstate = () => {
@@ -266,20 +315,45 @@
 
         function openModal() {
             document.getElementById('modal-overlay').classList.remove('hidden');
-            document.getElementById('start-date').valueAsDate = new Date();
+            
+            const today = new Date();
+            document.getElementById('start-date').valueAsDate = today;
+            
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('end-date').valueAsDate = tomorrow;
         }
 
-        function closeModal() { document.getElementById('modal-overlay').classList.add('hidden'); }
+        function closeModal() { 
+            document.getElementById('modal-overlay').classList.add('hidden'); 
+            document.getElementById('task-name').value = '';
+        }
 
         function saveTask() {
             const name = document.getElementById('task-name').value;
-            const start = document.getElementById('start-date').value;
-            const dur = document.getElementById('duration').value;
-            if(!name || !start || !dur) return;
+            const startStr = document.getElementById('start-date').value;
+            const endStr = document.getElementById('end-date').value;
+            
+            if(!name || !startStr || !endStr) {
+                alert("Please fill out all parameters.");
+                return;
+            }
 
-            const task = { id: Date.now(), name, start, duration: parseInt(dur) };
+            const startDate = new Date(startStr);
+            const endDate = new Date(endStr);
+            
+            const diffTime = endDate - startDate;
+            const durationDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+            if (durationDays <= 0) {
+                alert("End date must be after the start date.");
+                return;
+            }
+
+            const task = { id: Date.now(), name, start: startStr, duration: durationDays };
             tasks.push(task);
-            localStorage.setItem('continuum_v3', JSON.stringify(tasks));
+            // I bumped the localStorage key to v4 so it clears out old blue-theme test data
+            localStorage.setItem('continuum', JSON.stringify(tasks));
             renderTasks();
             closeModal();
         }
@@ -296,7 +370,7 @@
                 };
                 card.innerHTML = `
                     <div class="task-name">${t.name.toUpperCase()}</div>
-                    <div style="color: #ddd">›</div>
+                    <div style="color: var(--text-muted); font-size: 1.2rem; font-weight: bold;">›</div>
                 `;
                 list.appendChild(card);
             });
@@ -335,21 +409,17 @@
             let percent = Math.min(Math.max(Math.round((dayIndex / task.duration) * 100), 0), 100);
             document.getElementById('progress-percentage').innerText = `${percent}% OF JOURNEY COMPLETE`;
         }
-
-        // --- NEW DELETE LOGIC ---
         
         const terminateBtn = document.getElementById('terminate-btn');
         const deleteActionBtn = document.getElementById('delete-action');
 
-        // 1. Double click the label to show pop-up
         terminateBtn.ondblclick = () => {
             document.getElementById('confirm-popup').style.display = 'flex';
         };
 
-        // 2. Click the confirm button to finalize
         deleteActionBtn.onclick = () => {
             tasks = tasks.filter(t => t.id !== currentEditingId);
-            localStorage.setItem('continuum_v3', JSON.stringify(tasks));
+            localStorage.setItem('continuum', JSON.stringify(tasks));
             showHomeView();
             history.pushState({view: 'home'}, "");
         };
