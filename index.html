@@ -586,9 +586,15 @@
                                             <span>Continuum</span>
                                         </a>
                                         
-                                    
+                                                                                
+                                        {/* Option 4: planner.html */}
+                                        <a href="planner.html" className="flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors">
+                                            <LucideIcon name="ContinuumLogo" size={16} />
+                                            <span>Continuum</span>
+                                        </a>
+                                        
                                                                             
-                                        {/* Option 4: focus.html */}
+                                        {/* Option 5: focus.html */}
                                         <a href="focus.html" className="flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors">
                                             <LucideIcon name="FocusLogo" size={16} />
                                             <span>Focus</span>
@@ -596,7 +602,7 @@
                                         
                                     
 
-                                        {/* Option 5: Notifications */}
+                                        {/* Option 6: Notifications */}
                                         <button onClick={requestNotificationPermission} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors text-left">
                                             <LucideIcon name="Bell" size={16} />
                                             <span>
@@ -604,7 +610,7 @@
                                             </span>
                                         </button>
 
-                                        {/* Option 6: Help */}
+                                        {/* Option 7: Help */}
                                         <button onClick={() => { setIsMenuOpen(false); setIsAboutOpen(true); }} className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 hover:text-indigo-600 transition-colors text-left">
                                             <LucideIcon name="HelpCircle" size={16} />
                                             <span>About & Help</span>
