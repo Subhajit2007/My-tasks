@@ -403,7 +403,23 @@
 
     <script>
         const slider = document.getElementById('slider');
-        const demoTasksArray = ["সকালে জল পান করা", "৩০ মিনিট বই পড়া", "ব্যায়াম করা"];
+        const demoTasksArray = [
+  "Wake up before sunrise",
+  "Cold shower",
+  "100 push ups (or alternate with rest days)",
+  "Eat chana",
+  "Eat 1 or 2 eggs",
+  "Study minimum 3 hr",
+  "15 minutes for hobby",
+  "3 liter of water",
+  "Less social media use",
+  "Healthy eating (No junk/added sugar)",
+  "No porn",
+  "Plan next day",
+  "Skin care",
+  "Sleep before 10:30",
+  "Sleep 7-8 hr"
+];
         let routineData = JSON.parse(localStorage.getItem('monthlyRoutineData')) || {};
         
         let daysInMonthCount = 30; // Will be set dynamically
@@ -599,7 +615,7 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    scales: { y: { min: 0, max: 4, ticks: { stepSize: 1 } } }
+                    scales: { y: { min: 0, max: 20, ticks: { stepSize: 1 } } }
                 }
             });
 
