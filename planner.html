@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Monthly Planner with Analytics</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #e0e7ff;
+            --bg: #eef2f6;
+            --surface: #ffffff;
+            --text: #1f2937;
+            --text-light: #6b7280;
+            --border: #e5e7eb;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            overflow-y: auto; /* Allow main body to scroll down to see charts */
+        }
+
+        /* Top Bar */
+        .top-bar {
+            width: 100%;
+            padding: 1.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1000px;
+            gap: 1rem;
+        }
+
+        .title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 0.8rem;
+        }
+
+        .nav-btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2);
+            transition: transform 0.2s;
+        }
+
+        .nav-btn.secondary {
+            background-color: var(--surface);
+            color: var(--primary);
+            border: 2px solid var(--primary);
+            box-shadow: none;
+        }
+
+        .nav-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Slider Container */
+        .slider-container {
+            width: 100%;
+            min-height: 560px;
+            display: flex;
+            align-items: center;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            padding: 2rem calc(50vw - 160px); 
+        }
+
+        /* Smooth scroll is ONLY active when clicking 'Go to Today', not during initial load */
+        .slider-container.smooth-scroll {
+            scroll-behavior: smooth;
+        }
+
+        .slider-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Individual Cards */
+        .card {
+            min-width: 320px;
+            height: 520px; 
+            background-color: var(--surface);
+            border-radius: 20px;
+            margin: 0 1rem;
+            padding: 1.5rem;
+            scroll-snap-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            opacity: 0.6;
+            transform: scale(0.9);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card.active {
+            opacity: 1;
+            transform: scale(1.05);
+            box-shadow: 0 10px 25px rgba(79, 70, 229, 0.15);
+            border: 2px solid var(--primary);
+        }
+
+        /* Locked Card Styling */
+        .card.locked {
+            background-color: #f3f4f6;
+            border: 1px solid var(--border);
+        }
+        .card.locked .task-item {
+            cursor: not-allowed;
+            background-color: #eaeded;
+        }
+
+        .card-header {
+            text-align: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--text);
+        }
+
+        .card-date {
+            font-size: 0.9rem;
+            color: var(--text-light);
+            margin-top: 0.3rem;
+        }
+
+        /* Task List */
+        .task-list {
+            list-style: none;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .task-list::-webkit-scrollbar {
+            display: none;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background-color: #f9fafb;
+            border-radius: 12px;
+            margin-bottom: 0.8rem;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .task-item.completed {
+            opacity: 0.5;
+            background-color: #f3f4f6;
+        }
+
+        .task-item.completed .task-text {
+            text-decoration: line-through;
+            color: var(--text-light);
+        }
+
+        .checkbox {
+            width: 1.4rem;
+            height: 1.4rem;
+            accent-color: var(--primary);
+            pointer-events: none;
+        }
+
+        /* Sleep Cycle Section */
+        .sleep-section {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 2px dashed var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .sleep-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+        .sleep-input-group {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1.5rem;
+            background-color: var(--primary-light);
+            padding: 0.8rem;
+            border-radius: 12px;
+        }
+
+        .card.locked .sleep-input-group {
+            background-color: #e5e7eb;
+        }
+
+        .time-box {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .time-box input {
+            width: 3.5rem;
+            padding: 0.4rem;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--primary);
+            outline: none;
+        }
+
+        .card.locked .time-box input {
+            color: var(--text-light);
+            cursor: not-allowed;
+            background-color: #f3f4f6;
+        }
+
+        .time-box span {
+            color: var(--primary);
+            font-weight: bold;
+        }
+        .card.locked .time-box span {
+            color: var(--text-light);
+        }
+
+        .time-box input[type="number"]::-webkit-inner-spin-button, 
+        .time-box input[type="number"]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; margin: 0; 
+        }
+
+        /* Graph Dashboard Section */
+        .dashboard-container {
+            width: 100%;
+            max-width: 1000px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .chart-box {
+            background-color: var(--surface);
+            padding: 1.5rem;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            width: 100%;
+        }
+
+        .chart-box h3 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Modal / Popup Styling */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: var(--surface);
+            padding: 2rem;
+            border-radius: 24px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+
+        .modal-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+        }
+
+        .month-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .month-btn {
+            padding: 0.8rem;
+            border: 1px solid var(--border);
+            background-color: #f9fafb;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .month-btn:hover {
+            background-color: var(--primary-light);
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .close-modal-btn {
+            background-color: #ef4444;
+            color: white;
+            border: none;
+            padding: 0.5rem 1.5rem;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <div class="title" id="monthTitle">June Routine</div>
+        <div class="btn-group">
+            <button class="nav-btn secondary" onclick="openModal()">📅 Select Month</button>
+            <button class="nav-btn" onclick="scrollToToday(true)">🎯 Go to Today</button>
+        </div>
+    </div>
+
+    <div class="slider-container" id="slider"></div>
+
+    <div class="dashboard-container">
+        <div class="chart-box">
+            <h3>📊 Completed Tasks per Day</h3>
+            <div style="position: relative; width: 100%; height: 200px;">
+                <canvas id="tasksChart"></canvas>
+            </div>
+        </div>
+        
+        <div class="chart-box">
+            <h3>🛌 Sleep Tracker (Hours)</h3>
+            <div style="position: relative; width: 100%; height: 200px;">
+                <canvas id="sleepChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="monthModal">
+        <div class="modal-content">
+            <div class="modal-title">Select History Month</div>
+            <div class="month-grid">
+                <button class="month-btn" onclick="showHistoryAlert('January')">Jan</button>
+                <button class="month-btn" onclick="showHistoryAlert('February')">Feb</button>
+                <button class="month-btn" onclick="showHistoryAlert('March')">Mar</button>
+                <button class="month-btn" onclick="showHistoryAlert('April')">Apr</button>
+                <button class="month-btn" onclick="showHistoryAlert('May')">May</button>
+                <button class="month-btn" onclick="showHistoryAlert('June')">Jun</button>
+                <button class="month-btn" onclick="showHistoryAlert('July')">Jul</button>
+                <button class="month-btn" onclick="showHistoryAlert('August')">Aug</button>
+                <button class="month-btn" onclick="showHistoryAlert('September')">Sep</button>
+                <button class="month-btn" onclick="showHistoryAlert('October')">Oct</button>
+                <button class="month-btn" onclick="showHistoryAlert('November')">Nov</button>
+                <button class="month-btn" onclick="showHistoryAlert('December')">Dec</button>
+            </div>
+            <button class="close-modal-btn" onclick="closeModal()">Close</button>
+        </div>
+    </div>
+
+    <script>
+        const slider = document.getElementById('slider');
+        const demoTasksArray = ["সকালে জল পান করা", "৩০ মিনিট বই পড়া", "ব্যায়াম করা"];
+        let routineData = JSON.parse(localStorage.getItem('monthlyRoutineData')) || {};
+        
+        let daysInMonthCount = 30; // Will be set dynamically
+        let labelsList = []; // Days (1, 2, 3...)
+        let tasksChart, sleepChart;
+
+        function generateCards() {
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            const currentMonth = today.getMonth(); 
+            
+            daysInMonthCount = new Date(currentYear, currentMonth + 1, 0).getDate();
+            const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            document.getElementById('monthTitle').innerText = `${monthNames[currentMonth]} ${currentYear} Routine`;
+
+            const todayDateString = today.toDateString();
+            let yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+            const yesterdayDateString = yesterday.toDateString();
+
+            for (let day = 1; day <= daysInMonthCount; day++) {
+                labelsList.push(day);
+                let targetDate = new Date(currentYear, currentMonth, day);
+                const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                
+                if (!routineData[dateKey]) {
+                    routineData[dateKey] = {
+                        tasks: new Array(demoTasksArray.length).fill(false),
+                        sleepH: '', sleepM: ''
+                    };
+                }
+
+                const options = { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' };
+                let dateString = targetDate.toLocaleDateString('en-US', options);
+
+                let isToday = targetDate.toDateString() === todayDateString;
+                let isYesterday = targetDate.toDateString() === yesterdayDateString;
+                
+                // Read-only logic: Today and Yesterday checking
+                let isEditable = isToday || isYesterday;
+
+                let titleText = dateString.split(',')[0]; 
+                if (isToday) titleText = "Today";
+                else if (isYesterday) titleText = "Yesterday";
+
+                let tasksHTML = '';
+                demoTasksArray.forEach((taskText, index) => {
+                    const isCompleted = routineData[dateKey].tasks[index];
+                    // If not editable, we block inline onclick event
+                    let clickAction = isEditable ? `onclick="toggleTask('${dateKey}', ${index}, this)"` : '';
+                    tasksHTML += `
+                        <label class="task-item ${isCompleted ? 'completed' : ''}" ${clickAction}>
+                            <input type="checkbox" class="checkbox" ${isCompleted ? 'checked' : ''} ${!isEditable ? 'disabled' : ''}>
+                            <span class="task-text">${taskText}</span>
+                        </label>
+                    `;
+                });
+
+                const card = document.createElement('div');
+                card.className = `card ${isToday ? 'active' : ''} ${!isEditable ? 'locked' : ''}`;
+                if (isToday) card.id = "card-today";
+
+                card.innerHTML = `
+                    <div class="card-header">
+                        <div class="card-title" ${isToday ? 'style="color: var(--primary);"' : ''}>${titleText}</div>
+                        <div class="card-date">${dateString}</div>
+                    </div>
+                    <ul class="task-list">
+                        ${tasksHTML}
+                    </ul>
+                    <div class="sleep-section">
+                        <div class="sleep-title">🛌 Sleep Duration</div>
+                        <div class="sleep-input-group">
+                            <div class="time-box">
+                                <input type="number" min="0" max="24" placeholder="00" 
+                                    value="${routineData[dateKey].sleepH}" 
+                                    oninput="saveSleep('${dateKey}', 'h', this.value)"
+                                    ${!isEditable ? 'disabled' : ''}>
+                                <span>h</span>
+                            </div>
+                            <div class="time-box">
+                                <input type="number" min="0" max="59" placeholder="00" 
+                                    value="${routineData[dateKey].sleepM}" 
+                                    oninput="saveSleep('${dateKey}', 'm', this.value)"
+                                    ${!isEditable ? 'disabled' : ''}>
+                                <span>m</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                slider.appendChild(card);
+            }
+        }
+
+        function toggleTask(dateKey, taskIndex, element) {
+            const checkbox = element.querySelector('.checkbox');
+            setTimeout(() => {
+                routineData[dateKey].tasks[taskIndex] = checkbox.checked;
+                if (checkbox.checked) {
+                    element.classList.add('completed');
+                } else {
+                    element.classList.remove('completed');
+                }
+                localStorage.setItem('monthlyRoutineData', JSON.stringify(routineData));
+                updateCharts(); // Instantly update graphs
+            }, 10);
+        }
+
+        function saveSleep(dateKey, type, value) {
+            if (type === 'h') routineData[dateKey].sleepH = value;
+            else if (type === 'm') routineData[dateKey].sleepM = value;
+            
+            localStorage.setItem('monthlyRoutineData', JSON.stringify(routineData));
+            updateCharts(); // Instantly update graphs
+        }
+
+        // Modified Scroll Function: Instantly sets position on initial load, smooth scroll only on button click
+        function scrollToToday(isSmooth = false) {
+            const todayCard = document.getElementById('card-today');
+            if (todayCard) {
+                if (isSmooth) slider.classList.add('smooth-scroll');
+                else slider.classList.remove('smooth-scroll');
+                
+                todayCard.scrollIntoView({ behavior: isSmooth ? 'smooth' : 'auto', inline: 'center' });
+            }
+        }
+
+        function setupScrollObserver() {
+            const cards = document.querySelectorAll('.card');
+            slider.addEventListener('scroll', () => {
+                let closestCard = null;
+                let closestDistance = Infinity;
+                const sliderCenter = slider.scrollLeft + (slider.clientWidth / 2);
+
+                cards.forEach(card => {
+                    const cardCenter = card.offsetLeft + (card.clientWidth / 2);
+                    const distance = Math.abs(sliderCenter - cardCenter);
+                    if (distance < closestDistance) {
+                        closestDistance = distance;
+                        closestCard = card;
+                    }
+                });
+
+                cards.forEach(card => card.classList.remove('active'));
+                if (closestCard) closestCard.classList.add('active');
+            });
+        }
+
+        /* --- Graph Analytics Setup --- */
+        function getChartData() {
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            const currentMonth = today.getMonth();
+            
+            let taskCounts = [];
+            let sleepHours = [];
+
+            for (let day = 1; day <= daysInMonthCount; day++) {
+                const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const data = routineData[dateKey];
+
+                // Count completed tasks
+                let completedCount = data ? data.tasks.filter(t => t === true).length : 0;
+                taskCounts.push(completedCount);
+
+                // Convert sleep duration to decimal hours (e.g. 7h 30m = 7.5)
+                let h = data && data.sleepH ? parseFloat(data.sleepH) : 0;
+                let m = data && data.sleepM ? parseFloat(data.sleepM) : 0;
+                let totalTime = h + (m / 60);
+                sleepHours.push(totalTime.toFixed(1));
+            }
+            return { taskCounts, sleepHours };
+        }
+
+        function initCharts() {
+            const { taskCounts, sleepHours } = getChartData();
+
+            // 1. Tasks Line Chart
+            const ctxTasks = document.getElementById('tasksChart').getContext('2d');
+            tasksChart = new Chart(ctxTasks, {
+                type: 'line',
+                data: {
+                    labels: labelsList,
+                    datasets: [{
+                        label: 'Tasks Done',
+                        data: taskCounts,
+                        borderColor: '#4f46e5',
+                        backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { min: 0, max: 3, ticks: { stepSize: 1 } } }
+                }
+            });
+
+            // 2. Sleep Bar Chart
+            const ctxSleep = document.getElementById('sleepChart').getContext('2d');
+            sleepChart = new Chart(ctxSleep, {
+                type: 'bar',
+                data: {
+                    labels: labelsList,
+                    datasets: [{
+                        label: 'Hours Slept',
+                        data: sleepHours,
+                        backgroundColor: '#818cf8',
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { min: 0, max: 12 } }
+                }
+            });
+        }
+
+        function updateCharts() {
+            const { taskCounts, sleepHours } = getChartData();
+            tasksChart.data.datasets[0].data = taskCounts;
+            sleepChart.data.datasets[0].data = sleepHours;
+            tasksChart.update();
+            sleepChart.update();
+        }
+
+        /* --- Modal Popup Logic --- */
+        function openModal() { document.getElementById('monthModal').style.display = 'flex'; }
+        function closeModal() { document.getElementById('monthModal').style.display = 'none'; }
+        function showHistoryAlert(month) {
+            alert(`You selected ${month}.\nযেহেতু আপনি অ্যাপটি এইমাত্র চালু করেছেন, তাই আগের মাসের কোনো ডাটাবেস ইতিহাস নেই। আগামী মাস থেকে এখানে গত মাসের ডেটা স্বয়ংক্রিয়ভাবে লোড হবে!`);
+            closeModal();
+        }
+
+        window.onload = () => {
+            generateCards();
+            setupScrollObserver();
+            scrollToToday(false); // Instantly snap without animation on open
+            initCharts();
+        };
+    </script>
+</body>
+</html>
