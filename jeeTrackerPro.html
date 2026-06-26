@@ -6,16 +6,16 @@
     <title>JEE Mains Syllabus Tracker</title>
     <style>
         :root {
-            --primary: #2563eb;
+            --primary: #3b82f6;
             --success: #10b981;
-            --bg: #f8fafc;
-            --card: #ffffff;
-            --text: #1e293b;
-            --border: #e2e8f0;
-            --phys-color: #3b82f6;
-            --chem-color: #10b981;
-            --math-color: #ef4444;
-            --timer-color: #8b5cf6; /* Purple for timer */
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f8fafc;
+            --border: #334155;
+            --phys-color: #60a5fa;
+            --chem-color: #34d399;
+            --math-color: #f87171;
+            --timer-color: #a78bfa;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
@@ -28,7 +28,8 @@
             color: white;
             padding: 2rem 1rem;
             text-align: center;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.5);
+            border-bottom: 1px solid var(--border);
         }
         
         h1 { margin-bottom: 0.5rem; font-size: 2rem; }
@@ -37,7 +38,7 @@
         /* CONTAINER */
         .container { max-width: 900px; margin: 0 auto; padding: 20px; }
 
-        /* DASHBOARD (Progress Bars) */
+        /* DASHBOARD */
         .dashboard {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -50,7 +51,7 @@
             background: var(--card);
             padding: 20px;
             border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
             text-align: center;
             border: 1px solid var(--border);
             display: flex;
@@ -59,12 +60,11 @@
         }
 
         .stat-val { font-size: 1.5rem; font-weight: bold; display: block; margin-bottom: 5px; }
-        .stat-label { font-size: 0.85rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-label { font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
         
-        /* Specific style for countdown text */
         .countdown-val {
-            font-size: 1.1rem; /* Slightly smaller to fit "Days" */
-            font-family: monospace; /* Monospace for steady numbers */
+            font-size: 1.1rem;
+            font-family: monospace;
             font-weight: bold;
             color: var(--timer-color);
             margin-bottom: 5px;
@@ -73,7 +73,7 @@
         .progress-circle {
             width: 100%;
             height: 8px;
-            background: #e2e8f0;
+            background: #334155;
             border-radius: 4px;
             margin-top: 10px;
             overflow: hidden;
@@ -85,17 +85,17 @@
         .tab-btn {
             padding: 10px 20px;
             border: none;
-            background: white;
+            background: var(--card);
             border-radius: 8px;
             cursor: pointer;
             font-weight: 600;
-            color: #64748b;
+            color: #94a3b8;
             transition: all 0.2s;
             flex-shrink: 0;
-            border: 1px solid transparent;
+            border: 1px solid var(--border);
         }
-        .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(37,99,235,0.3); }
-        .tab-btn:hover:not(.active) { background: #e2e8f0; }
+        .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(59,130,246,0.4); border-color: var(--primary); }
+        .tab-btn:hover:not(.active) { background: #334155; color: #fff; }
 
         /* SYLLABUS LIST */
         .syllabus-section { display: none; }
@@ -115,25 +115,25 @@
             justify-content: space-between;
             align-items: center;
             cursor: pointer;
-            background: white;
+            background: var(--card);
             transition: background 0.2s;
         }
-        .chapter-header:hover { background: #f8fafc; }
+        .chapter-header:hover { background: #253346; }
         
         .chapter-title { font-weight: 600; font-size: 1.05rem; }
-        .chapter-progress { font-size: 0.8rem; color: #64748b; background: #f1f5f9; padding: 4px 8px; border-radius: 4px; }
+        .chapter-progress { font-size: 0.8rem; color: #cbd5e1; background: #334155; padding: 4px 8px; border-radius: 4px; }
 
         .topic-list {
             padding: 0;
             list-style: none;
-            display: none; /* Hidden by default */
+            display: none;
             border-top: 1px solid var(--border);
         }
         .chapter.open .topic-list { display: block; }
         
         .topic-item {
             padding: 12px 20px;
-            border-bottom: 1px solid #f1f5f9;
+            border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -149,7 +149,7 @@
             min-width: 150px;
         }
 
-        /* 3-CHECKBOX GROUP STYLING */
+        /* 3-CHECKBOX GROUP */
         .task-group {
             display: flex;
             gap: 15px;
@@ -167,7 +167,7 @@
         .task-text {
             font-size: 0.7rem;
             text-transform: uppercase;
-            color: #94a3b8;
+            color: #64748b;
             font-weight: 600;
             letter-spacing: 0.5px;
         }
@@ -181,7 +181,7 @@
         
         .topic-item.fully-done .topic-label {
              text-decoration: line-through; 
-             color: #94a3b8; 
+             color: #64748b; 
         }
 
         /* UTILS */
@@ -196,13 +196,14 @@
         /* RESPONSIVE */
         @media (max-width: 600px) {
             .dashboard { grid-template-columns: 1fr 1fr; }
-            .stat-card:first-child { grid-column: 1 / -1; } /* Total full width */
-            .stat-card:nth-child(5) { grid-column: 1 / -1; } /* Timer full width on mobile */
+            .stat-card:first-child { grid-column: 1 / -1; }
+            .stat-card:nth-child(5) { grid-column: 1 / -1; }
             h1 { font-size: 1.5rem; }
             .topic-item { align-items: flex-start; }
             .task-group { margin-top: 5px; align-self: flex-end; }
         }
     </style>
+
 </head>
 <body>
 
