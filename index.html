@@ -2,161 +2,148 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Tasks - Premium Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mobile Dashboard</title>
     <style>
-        /* Smooth Scrolling & Modern Font Reset */
+        /* Mobile-First Reset & Setup */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent; /* Removes default blue tap highlight on mobile */
         }
 
         body {
-            background-color: #0b0c10;
-            color: #c5c6c7;
-            min-height: 100vh;
+            background-color: #09090b; /* Deep OLED Dark for battery saving and premium look */
+            color: #fafafa;
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            overflow-x: hidden;
+            overflow: hidden;
         }
 
-        /* Fixed Top Header Navbar */
+        /* App-like Header */
         header {
-            position: fixed;
+            padding: 24px 20px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #09090b;
+            position: sticky;
             top: 0;
-            left: 0;
-            width: 100%;
-            padding: 15px 30px;
-            display: flex;
-            justify-content: flex-start;
-            align-items: center;
-            background: rgba(11, 12, 16, 0.75);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            z-index: 100;
+            z-index: 10;
         }
 
-        /* Logo Styling with Smooth Hover Effect */
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-            font-size: 20px;
+        .header-title {
+            font-size: 26px;
             font-weight: 700;
-            color: #66fcf1;
-            padding: 8px 16px;
-            border-radius: 8px;
-            background: rgba(102, 252, 241, 0.05);
-            border: 1px solid rgba(102, 252, 241, 0.1);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            letter-spacing: -0.5px;
         }
 
-        .logo:hover {
-            background: rgba(102, 252, 241, 0.15);
-            border-color: #66fcf1;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(102, 252, 241, 0.2);
-        }
-
-        .logo-icon {
-            background: #66fcf1;
-            color: #0b0c10;
-            width: 28px;
-            height: 28px;
+        .info-icon {
+            background: #27272a;
+            color: #a1a1aa;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
             display: flex;
-            align-items: center;
             justify-content: center;
-            border-radius: 6px;
-            font-weight: 900;
-            font-size: 16px;
-        }
-
-        /* Main Center Content Container */
-        .container {
-            max-width: 550px;
-            width: 100%;
-            padding: 40px 20px;
-            margin-top: 80px; /* space for header */
-            text-align: center;
-        }
-
-        h1 {
-            font-size: 32px;
+            align-items: center;
             font-weight: 600;
-            color: #ffffff;
-            margin-bottom: 8px;
-            letter-spacing: 0.5px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.1s ease, background 0.1s ease;
         }
 
-        .subtitle {
-            color: #45f3ff;
-            font-size: 14px;
-            margin-bottom: 35px;
-            opacity: 0.8;
+        /* Mobile Tap Effect */
+        .info-icon:active {
+            transform: scale(0.9);
+            background: #3f3f46;
         }
 
-        /* Menu Links Card Layout */
-        .menu {
+        /* Scrollable Menu Area */
+        .menu-container {
+            flex: 1;
+            padding: 10px 20px;
+            overflow-y: auto;
             display: flex;
             flex-direction: column;
             gap: 16px;
         }
 
-        .menu a {
-            text-decoration: none;
-            color: #ffffff;
-            background: #1f2833;
-            padding: 18px 24px;
-            border-radius: 12px;
-            font-size: 18px;
-            font-weight: 500;
+        /* Native App Style List Items */
+        .menu-item {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            border: 1px solid rgba(255, 255, 255, 0.03);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background-color: #18181b;
+            padding: 16px;
+            border-radius: 20px;
+            text-decoration: none;
+            color: #fafafa;
+            border: 1px solid #27272a;
+            transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.15s;
         }
 
-        /* Advanced Card Hover and Ripple Feel */
-        .menu a:hover {
-            background: #2a3442;
-            border-color: #45f3ff;
-            transform: translateX(6px);
-            box-shadow: -5px 5px 15px rgba(69, 243, 255, 0.1);
+        /* Touch interaction instead of hover */
+        .menu-item:active {
+            transform: scale(0.96);
+            background-color: #27272a;
         }
 
-        .menu a::after {
-            content: '➔';
-            font-size: 16px;
-            color: #45f3ff;
-            transition: transform 0.3s ease;
+        .item-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 22px;
+            margin-right: 16px;
         }
 
-        .menu a:hover::after {
-            transform: translateX(4px);
+        /* Unique icon colors */
+        .bg-blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+        .bg-green { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+        .bg-purple { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
+
+        .item-content {
+            flex: 1;
         }
 
-        /* Smooth Glassmorphism Modal (About Popup) */
+        .item-title {
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .item-subtitle {
+            font-size: 13px;
+            color: #a1a1aa;
+        }
+
+        .chevron {
+            color: #52525b;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        /* Mobile Bottom Sheet Modal */
         .modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.75);
-            backdrop-filter: blur(8px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.4s ease;
-            z-index: 1000;
+            transition: opacity 0.3s ease;
+            z-index: 100;
+            display: flex;
+            align-items: flex-end; /* Aligns modal to bottom for easy thumb access */
         }
 
         .modal-overlay.active {
@@ -164,133 +151,126 @@
             pointer-events: auto;
         }
 
-        .modal-content {
-            background: #151a21;
-            border: 1px solid rgba(102, 252, 241, 0.2);
-            border-radius: 20px;
-            padding: 30px;
-            max-width: 440px;
-            width: 90%;
-            transform: scale(0.85);
-            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+        .bottom-sheet {
+            background: #18181b;
+            width: 100%;
+            border-top-left-radius: 24px;
+            border-top-right-radius: 24px;
+            padding: 24px;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
-        .modal-overlay.active .modal-content {
-            transform: scale(1);
+        .modal-overlay.active .bottom-sheet {
+            transform: translateY(0);
         }
 
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            padding-bottom: 12px;
+        .sheet-handle {
+            width: 40px;
+            height: 5px;
+            background: #3f3f46;
+            border-radius: 10px;
+            margin: 0 auto 20px auto;
         }
 
-        .modal-header h3 {
-            font-size: 22px;
-            color: #ffffff;
+        .sheet-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .sheet-text {
+            color: #a1a1aa;
+            font-size: 15px;
+            line-height: 1.5;
+            margin-bottom: 24px;
         }
 
         .close-btn {
-            background: none;
+            width: 100%;
+            padding: 16px;
+            background: #fafafa;
+            color: #09090b;
             border: none;
-            color: #c5c6c7;
-            font-size: 26px;
-            cursor: pointer;
-            transition: color 0.2s;
-            line-height: 1;
-        }
-
-        .close-btn:hover {
-            color: #ff4a4a;
-        }
-
-        .modal-body p {
-            font-size: 15px;
-            color: #94a3b8;
-            line-height: 1.6;
-            margin-bottom: 15px;
-        }
-
-        .info-row {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-        }
-
-        .badge {
-            background: rgba(69, 243, 255, 0.1);
-            color: #45f3ff;
-            padding: 6px 14px;
-            border-radius: 20px;
-            font-size: 13px;
+            border-radius: 14px;
+            font-size: 16px;
             font-weight: 600;
-            border: 1px solid rgba(69, 243, 255, 0.2);
+            transition: transform 0.1s, background 0.1s;
+        }
+
+        .close-btn:active {
+            transform: scale(0.97);
+            background: #e4e4e7;
         }
     </style>
 </head>
 <body>
 
-    <!-- Header containing Logo on Top Left -->
     <header>
-        <div class="logo" id="aboutTrigger" title="Click to view About Info">
-            <span class="logo-icon">M</span> My Tasks
-        </div>
+        <div class="header-title">NEXUS HUB</div>
+        <button class="info-icon" id="infoBtn">i</button>
     </header>
 
-    <!-- Main Links Container -->
-    <div class="container">
-        <h1>Workspace Hub</h1>
-        <p class="subtitle">Smoothly access your dashboard apps</p>
+    <div class="menu-container">
+        <a href="jeeTrackerPro.html" class="menu-item">
+            <div class="item-icon bg-blue">🎯</div>
+            <div class="item-content">
+                <div class="item-title">JEE Tracker Pro</div>
+                <div class="item-subtitle">Manage syllabus & mocks</div>
+            </div>
+            <div class="chevron">›</div>
+        </a>
 
-        <div class="menu">
-                 <a href="jeeTrackerPro.html">JEE Tracker Pro</a>
-                 <a href="StudyTracker.html">Study Tracker</a>
-                 <a href="continuum.html">Continuum</a>
+        <a href="StudyTracker.html" class="menu-item">
+            <div class="item-icon bg-green">📚</div>
+            <div class="item-content">
+                <div class="item-title">Study Tracker</div>
+                <div class="item-subtitle">Daily progress & hours</div>
+            </div>
+            <div class="chevron">›</div>
+        </a>
+
+        <a href="continuum.html" class="menu-item">
+            <div class="item-icon bg-purple">♾️</div>
+            <div class="item-content">
+                <div class="item-title">Continuum</div>
+                <div class="item-subtitle">Uninterrupted workflow</div>
+            </div>
+            <div class="chevron">›</div>
+        </a>
+    </div>
+
+    <!-- Bottom Sheet Modal for Mobile -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="bottom-sheet">
+            <div class="sheet-handle"></div>
+            <div class="sheet-title">App Info</div>
+            <div class="sheet-text">
+                This is a mobile-optimized workspace dashboard. It features touch-friendly interactive elements and an OLED dark theme to reduce battery consumption on your phone.
+            </div>
+            <button class="close-btn" id="closeBtn">Got it</button>
         </div>
     </div>
 
-    <!-- Smooth Pop-up (Modal) for About Info -->
-    <div class="modal-overlay" id="aboutModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>About This Workspace</h3>
-                <button class="close-btn" id="closeModal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <p>Welcome to your advanced task manager. This UI acts as a centralized dashboard to host all your critical sub-modules smoothly without any heavy loading lag.</p>
-                <p>Designed perfectly for nightly dark-room usage with smooth hardware-accelerated transitions.</p>
-                <div class="info-row">
-                    <span class="badge">Version 6.0.3sv</span>
-                    <span class="badge">UI: Gemini AI</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Smooth Javascript Control -->
     <script>
-        const trigger = document.getElementById('aboutTrigger');
-        const modal = document.getElementById('aboutModal');
-        const closeBtn = document.getElementById('closeModal');
+        const infoBtn = document.getElementById('infoBtn');
+        const modalOverlay = document.getElementById('modalOverlay');
+        const closeBtn = document.getElementById('closeBtn');
 
-        // Open Modal Smoothly
-        trigger.addEventListener('click', () => {
-            modal.classList.add('active');
+        // Open Bottom Sheet
+        infoBtn.addEventListener('click', () => {
+            modalOverlay.classList.add('active');
         });
 
-        // Close Modal via 'X' Button
+        // Close Bottom Sheet via Button
         closeBtn.addEventListener('click', () => {
-            modal.classList.remove('active');
+            modalOverlay.classList.remove('active');
         });
 
-        // Close Modal if Clicked Outside the content box
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.classList.remove('active');
+        // Close Bottom Sheet when tapping outside
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) {
+                modalOverlay.classList.remove('active');
             }
         });
     </script>
