@@ -149,11 +149,13 @@
             min-width: 150px;
         }
 
-        /* 3-CHECKBOX GROUP */
+        /* 8-CHECKBOX GROUP */
         .task-group {
             display: flex;
             gap: 15px;
             align-items: center;
+            flex-wrap: wrap;
+            justify-content: flex-end;
         }
 
         .task-option {
@@ -165,11 +167,13 @@
         }
 
         .task-text {
-            font-size: 0.7rem;
+            font-size: 0.65rem;
             text-transform: uppercase;
             color: #64748b;
             font-weight: 600;
             letter-spacing: 0.5px;
+            text-align: center;
+            max-width: 60px;
         }
 
         input[type="checkbox"] {
@@ -199,8 +203,8 @@
             .stat-card:first-child { grid-column: 1 / -1; }
             .stat-card:nth-child(5) { grid-column: 1 / -1; }
             h1 { font-size: 1.5rem; }
-            .topic-item { align-items: flex-start; }
-            .task-group { margin-top: 5px; align-self: flex-end; }
+            .topic-item { align-items: flex-start; flex-direction: column; }
+            .task-group { margin-top: 5px; align-self: flex-start; justify-content: flex-start; gap: 10px; }
         }
     </style>
 
@@ -383,15 +387,20 @@
             chapters.forEach((chapter, index) => {
                 const chapterId = `${subject}_c${index}`;
                 
-                // Calculate chapter progress (Units of 3 now)
+                // Calculate chapter progress (Units of 8 now)
                 let completedUnits = 0;
-                let totalUnits = chapter.topics.length * 3;
+                let totalUnits = chapter.topics.length * 8;
 
                 chapter.topics.forEach((topic, tIndex) => {
                     const tid = `${chapterId}_t${tIndex}`;
-                    if (progressData[`${tid}_th`]) completedUnits++;
-                    if (progressData[`${tid}_qu`]) completedUnits++;
-                    if (progressData[`${tid}_rv`]) completedUnits++;
+                    if (progressData[`${tid}_lec`]) completedUnits++;
+                    if (progressData[`${tid}_dpp`]) completedUnits++;
+                    if (progressData[`${tid}_pyq`]) completedUnits++;
+                    if (progressData[`${tid}_rep`]) completedUnits++;
+                    if (progressData[`${tid}_sum`]) completedUnits++;
+                    if (progressData[`${tid}_tst`]) completedUnits++;
+                    if (progressData[`${tid}_ana`]) completedUnits++;
+                    if (progressData[`${tid}_fin`]) completedUnits++;
                 });
 
                 const percent = totalUnits === 0 ? 0 : Math.round((completedUnits / totalUnits) * 100);
@@ -399,9 +408,9 @@
                 // Create Elements
                 const chapterDiv = document.createElement('div');
                 chapterDiv.className = 'chapter';
-                chapterDiv.id = `chap_${chapterId}`; // Add ID for easier selection later
+                chapterDiv.id = `chap_${chapterId}`; 
                 
-                const header = document.createElement('div');
+                          const header = document.createElement('div');
                 header.className = 'chapter-header';
                 header.innerHTML = `
                     <span class="chapter-title"><span class="badge" style="background:${getSubjectColor(subject)}"></span>${chapter.title}</span>
@@ -422,11 +431,16 @@
                     li.className = 'topic-item';
                     
                     // Check completion for styling
-                    const isTheory = progressData[`${topicId}_th`];
-                    const isQuest = progressData[`${topicId}_qu`];
-                    const isRev = progressData[`${topicId}_rv`];
+                    const isLec = progressData[`${topicId}_lec`];
+                    const isDpp = progressData[`${topicId}_dpp`];
+                    const isPyq = progressData[`${topicId}_pyq`];
+                    const isRep = progressData[`${topicId}_rep`];
+                    const isSum = progressData[`${topicId}_sum`];
+                    const isTst = progressData[`${topicId}_tst`];
+                    const isAna = progressData[`${topicId}_ana`];
+                    const isFin = progressData[`${topicId}_fin`];
                     
-                    if (isTheory && isQuest && isRev) {
+                    if (isLec && isDpp && isPyq && isRep && isSum && isTst && isAna && isFin) {
                         li.classList.add('fully-done');
                     }
 
@@ -459,12 +473,17 @@
                         return { wrapper, cb };
                     };
 
-                    const t1 = createSubTask('th', '📖 Theory');
-                    const t2 = createSubTask('qu', '✍🏻 Quest');
-                    const t3 = createSubTask('rv', '↺ Revise');
+                    const t1 = createSubTask('lec', 'Lecture');
+                    const t2 = createSubTask('dpp', 'DPP');
+                    const t3 = createSubTask('pyq', 'PYQ\'s');
+                    const t4 = createSubTask('rep', 'Replica Sheet');
+                    const t5 = createSubTask('sum', 'Summary Note');
+                    const t6 = createSubTask('tst', 'Test');
+                    const t7 = createSubTask('ana', 'Test Analysis');
+                    const t8 = createSubTask('fin', 'Final Revision');
 
                     // --- ROBUST EVENT LISTENER (NO RE-RENDERS) ---
-                    [t1, t2, t3].forEach(task => {
+                    [t1, t2, t3, t4, t5, t6, t7, t8].forEach(task => {
                         task.cb.addEventListener('change', (e) => {
                             // 1. Update Data
                             const suffix = task.cb.id.split('_').pop();
@@ -475,7 +494,7 @@
                             updateStats();
 
                             // 3. Update Visuals (Strikethrough)
-                            const allChecked = t1.cb.checked && t2.cb.checked && t3.cb.checked;
+                            const allChecked = t1.cb.checked && t2.cb.checked && t3.cb.checked && t4.cb.checked && t5.cb.checked && t6.cb.checked && t7.cb.checked && t8.cb.checked;
                             if (allChecked) li.classList.add('fully-done');
                             else li.classList.remove('fully-done');
 
@@ -502,13 +521,18 @@
         // Helper to update just the header text without closing accordion
         function updateChapterHeaderPercent(chapter, chapterId, headerEl) {
             let completedUnits = 0;
-            let totalUnits = chapter.topics.length * 3;
+            let totalUnits = chapter.topics.length * 8;
 
             chapter.topics.forEach((topic, tIndex) => {
                 const tid = `${chapterId}_t${tIndex}`;
-                if (progressData[`${tid}_th`]) completedUnits++;
-                if (progressData[`${tid}_qu`]) completedUnits++;
-                if (progressData[`${tid}_rv`]) completedUnits++;
+                if (progressData[`${tid}_lec`]) completedUnits++;
+                if (progressData[`${tid}_dpp`]) completedUnits++;
+                if (progressData[`${tid}_pyq`]) completedUnits++;
+                if (progressData[`${tid}_rep`]) completedUnits++;
+                if (progressData[`${tid}_sum`]) completedUnits++;
+                if (progressData[`${tid}_tst`]) completedUnits++;
+                if (progressData[`${tid}_ana`]) completedUnits++;
+                if (progressData[`${tid}_fin`]) completedUnits++;
             });
 
             const percent = totalUnits === 0 ? 0 : Math.round((completedUnits / totalUnits) * 100);
@@ -540,12 +564,17 @@
                 let subjDone = 0;
 
                 syllabusData[subj].forEach((chap, cIdx) => {
-                    subjUnits += chap.topics.length * 3;
+                    subjUnits += chap.topics.length * 8;
                     chap.topics.forEach((top, tIdx) => {
                         const tid = `${subj}_c${cIdx}_t${tIdx}`;
-                        if (progressData[`${tid}_th`]) subjDone++;
-                        if (progressData[`${tid}_qu`]) subjDone++;
-                        if (progressData[`${tid}_rv`]) subjDone++;
+                        if (progressData[`${tid}_lec`]) subjDone++;
+                        if (progressData[`${tid}_dpp`]) subjDone++;
+                        if (progressData[`${tid}_pyq`]) subjDone++;
+                        if (progressData[`${tid}_rep`]) subjDone++;
+                        if (progressData[`${tid}_sum`]) subjDone++;
+                        if (progressData[`${tid}_tst`]) subjDone++;
+                        if (progressData[`${tid}_ana`]) subjDone++;
+                        if (progressData[`${tid}_fin`]) subjDone++;
                     });
                 });
 
