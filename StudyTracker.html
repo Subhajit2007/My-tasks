@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- ========================================== -->
+    <!--                  CSS STYLES                -->
+    <!-- ========================================== -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        
+        body {
+            background-color: #000000; /* AMOLED Black */
+            color: #cbd5e1; /* Slate 300 */
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        .tracker-input {
+            background-color: rgba(30, 41, 59, 0.5); /* Slate 800 with opacity */
+            border: 1px solid #334155; /* Slate 700 */
+            border-radius: 0.5rem;
+            color: #f1f5f9; /* Slate 100 */
+            outline: none;
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            transition: all 0.2s ease;
+            font-size: 0.875rem;
+        }
+
+        .tracker-input:focus {
+            border-color: #6366f1; /* Indigo 500 */
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+            background-color: rgba(30, 41, 59, 0.8);
+        }
+        
+        .custom-checkbox {
+            appearance: none;
+            background-color: rgba(30, 41, 59, 0.8);
+            margin: 0;
+            font: inherit;
+            color: currentColor;
+            width: 1.25em;
+            height: 1.25em;
+            border: 1px solid #475569;
+            border-radius: 0.25em;
+            display: grid;
+            place-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .custom-checkbox::before {
+            content: "";
+            width: 0.65em;
+            height: 0.65em;
+            transform: scale(0);
+            transition: 120ms transform ease-in-out;
+            box-shadow: inset 1em 1em white;
+            background-color: white;
+            transform-origin: center;
+            clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+        }
+
+        .custom-checkbox:checked {
+            background-color: #6366f1; /* Indigo 500 */
+            border-color: #6366f1;
+        }
+
+        .custom-checkbox:checked::before {
+            transform: scale(1);
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Custom scrollbar for webkit */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #000000; /* AMOLED Black */
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569; 
+        }
+    </style>
+</head>
+<!-- ========================================== -->
+<!--                  HTML BODY                 -->
+<!-- ========================================== -->
+<body class="min-h-screen p-3 sm:p-6 lg:p-10 flex justify-center">
+
+    <div class="w-full max-w-4xl glass-panel rounded-2xl p-5 sm:p-8 relative">
+        
+        <!-- Loading overlay (Hidden by default for local storage) -->
+        <div id="loading-overlay" class="absolute inset-0 bg-[#000000] bg-opacity-90 z-40 flex items-center justify-center rounded-2xl transition-opacity duration-300 hidden">
+            <div class="flex flex-col items-center">
+                <div class="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-3"></div>
+                <div class="text-indigo-400 font-medium tracking-wide text-sm">Loading...</div>
+            </div>
+        </div>
+
+        <!-- Header / Date Section -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 pb-5 border-b border-slate-700/80 gap-4 sm:gap-0">
+            <div class="flex items-center space-x-4">
+                <h1 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">Study Tracker</h1>
+                
+                <!-- Tiny Save Indicator -->
+                <div id="save-indicator" class="flex items-center text-xs font-medium px-2.5 py-1 rounded-full bg-slate-800/80 border border-slate-700 text-slate-400 transition-all">
+                    <span id="save-dot" class="inline-block w-1.5 h-1.5 rounded-full bg-green-500 mr-2 shadow-[0_0_5px_#22c55e]"></span>
+                    <span id="save-text">Saved</span>
+                </div>
+            </div>
+
+            <div class="flex items-center bg-slate-800/80 rounded-lg p-1 border border-slate-700 w-full sm:w-auto justify-between sm:justify-start">
+                <button id="btn-prev-day" class="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-md transition-colors" title="Previous Day">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" /></svg>
+                </button>
+                
+                <input type="date" id="date-picker" class="bg-transparent border-none text-slate-200 focus:ring-0 outline-none px-2 py-1 text-sm font-medium [color-scheme:dark] cursor-pointer">
+                
+                <button id="btn-next-day" class="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-md transition-colors" title="Next Day">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Class Tracker Section -->
+        <div class="mb-10">
+            <h2 class="text-lg font-semibold mb-4 text-indigo-400 uppercase tracking-wider text-sm flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
+                Class Tracker
+            </h2>
+            
+            <div class="hidden md:grid md:grid-cols-12 gap-4 mb-3 text-xs text-slate-500 font-bold uppercase tracking-wider px-2">
+                <div class="col-span-3">Subject</div>
+                <div class="col-span-3">Topic</div>
+                <div class="col-span-3">Teacher</div>
+                <div class="col-span-3 text-center">Attended</div>
+            </div>
+
+            <div class="space-y-4 md:space-y-3">
+                <!-- Row 1 -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center bg-slate-800/40 p-4 md:p-2 rounded-xl border border-slate-700/50">
+                    <div class="md:col-span-3"><input type="text" id="subject-1" class="tracker-input save-data" placeholder="Subject..."></div>
+                    <div class="md:col-span-3"><input type="text" id="topic-1" class="tracker-input save-data" placeholder="Topic..."></div>
+                    <div class="md:col-span-3"><input type="text" id="teacher-1" class="tracker-input save-data" placeholder="Teacher..."></div>
+                    <div class="md:col-span-3 flex justify-around md:justify-center md:space-x-4 pt-2 md:pt-0">
+                         <label class="flex items-center space-x-2 cursor-pointer hover:text-white transition-colors">
+                            <input type="checkbox" id="live-1" class="custom-checkbox save-data"><span class="text-sm">Live</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer hover:text-white transition-colors">
+                            <input type="checkbox" id="recorded-1" class="custom-checkbox save-data"><span class="text-sm">Recorded</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Row 2 -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center bg-slate-800/40 p-4 md:p-2 rounded-xl border border-slate-700/50">
+                    <div class="md:col-span-3"><input type="text" id="subject-2" class="tracker-input save-data" placeholder="Subject..."></div>
+                    <div class="md:col-span-3"><input type="text" id="topic-2" class="tracker-input save-data" placeholder="Topic..."></div>
+                    <div class="md:col-span-3"><input type="text" id="teacher-2" class="tracker-input save-data" placeholder="Teacher..."></div>
+                    <div class="md:col-span-3 flex justify-around md:justify-center md:space-x-4 pt-2 md:pt-0">
+                         <label class="flex items-center space-x-2 cursor-pointer hover:text-white transition-colors">
+                            <input type="checkbox" id="live-2" class="custom-checkbox save-data"><span class="text-sm">Live</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer hover:text-white transition-colors">
+                            <input type="checkbox" id="recorded-2" class="custom-checkbox save-data"><span class="text-sm">Recorded</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Row 3 -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center bg-slate-800/40 p-4 md:p-2 rounded-xl border border-slate-700/50">
+                    <div class="md:col-span-3"><input type="text" id="subject-3" class="tracker-input save-data" placeholder="Subject..."></div>
+                    <div class="md:col-span-3"><input type="text" id="topic-3" class="tracker-input save-data" placeholder="Topic..."></div>
+                    <div class="md:col-span-3"><input type="text" id="teacher-3" class="tracker-input save-data" placeholder="Teacher..."></div>
+                    <div class="md:col-span-3 flex justify-around md:justify-center md:space-x-4 pt-2 md:pt-0">
+                         <label class="flex items-center space-x-2 cursor-pointer hover:text-white transition-colors">
+                            <input type="checkbox" id="live-3" class="custom-checkbox save-data"><span class="text-sm">Live</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer hover:text-white transition-colors">
+                            <input type="checkbox" id="recorded-3" class="custom-checkbox save-data"><span class="text-sm">Recorded</span>
+                        </label>
+                    </div>
+                </div>
+
+                 <!-- Row 4 -->
+                 <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center bg-slate-800/40 p-4 md:p-2 rounded-xl border border-slate-700/50">
+                    <div class="md:col-span-3"><input type="text" id="subject-4" class="tracker-input save-data" placeholder="Subject..."></div>
+                    <div class="md:col-span-3"><input type="text" id="topic-4" class="tracker-input save-data" placeholder="Topic..."></div>
+                    <div class="md:col-span-3"><input type="text" id="teacher-4" class="tracker-input save-data" placeholder="Teacher..."></div>
+                    <div class="md:col-span-3 flex justify-around md:justify-center md:space-x-4 pt-2 md:pt-0">
+                         <label class="flex items-center space-x-2 cursor-pointer hover:text-white transition-colors">
+                            <input type="checkbox" id="live-4" class="custom-checkbox save-data"><span class="text-sm">Live</span>
+                        </label>
+                        <label class="flex items-center space-x-2 cursor-pointer hover:text-white transition-colors">
+                            <input type="checkbox" id="recorded-4" class="custom-checkbox save-data"><span class="text-sm">Recorded</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Today's Study Work Section -->
+        <div class="mb-10 bg-slate-800/30 p-5 rounded-2xl border border-slate-700/50">
+            <h2 class="text-lg font-semibold mb-5 text-indigo-400 uppercase tracking-wider text-sm flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>
+                Today's Study Work
+            </h2>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-4 gap-x-6 mb-6">
+                <label class="flex items-center space-x-3 cursor-pointer hover:text-white transition-colors">
+                    <input type="checkbox" id="theory-revised" class="custom-checkbox save-data">
+                    <span class="text-sm font-medium">Theory Revised</span>
+                </label>
+                <label class="flex items-center space-x-3 cursor-pointer hover:text-white transition-colors">
+                    <input type="checkbox" id="dpp-solved" class="custom-checkbox save-data">
+                    <span class="text-sm font-medium">DPP Solved</span>
+                </label>
+                <label class="flex items-center space-x-3 cursor-pointer hover:text-white transition-colors">
+                    <input type="checkbox" id="pyq-practiced" class="custom-checkbox save-data">
+                    <span class="text-sm font-medium">PYQs Practiced</span>
+                </label>
+                <label class="flex items-center space-x-3 cursor-pointer hover:text-white transition-colors">
+                    <input type="checkbox" id="practice-sheet" class="custom-checkbox save-data">
+                    <span class="text-sm font-medium">Practice Sheet Attempted</span>
+                </label>
+                 <label class="flex items-center space-x-3 cursor-pointer hover:text-white transition-colors sm:col-start-2 lg:col-start-3">
+                    <input type="checkbox" id="formula-revised" class="custom-checkbox save-data">
+                    <span class="text-sm font-medium">Formula Revised</span>
+                </label>
+            </div>
+
+             <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+                <span class="text-slate-300 font-medium text-sm whitespace-nowrap">How Was Your Study Today?</span>
+                <input type="text" id="study-quality" class="tracker-input flex-grow save-data" placeholder="e.g. Focused and productive!">
+            </div>
+        </div>
+
+        <!-- Tests Section -->
+        <div class="mb-10 bg-slate-800/30 p-5 rounded-2xl border border-slate-700/50">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-5 gap-3">
+                <h2 class="text-lg font-semibold text-indigo-400 uppercase tracking-wider text-sm flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    Any Tests?
+                </h2>
+                <div class="flex space-x-6 bg-slate-900/50 py-1 px-3 rounded-lg border border-slate-700">
+                     <label class="flex items-center space-x-2 cursor-pointer hover:text-white transition-colors">
+                        <input type="radio" id="test-yes" name="any_test" value="yes" class="custom-checkbox rounded-full before:rounded-full save-data">
+                        <span class="text-sm font-medium">Yes</span>
+                    </label>
+                    <label class="flex items-center space-x-2 cursor-pointer hover:text-white transition-colors">
+                        <input type="radio" id="test-no" name="any_test" value="no" class="custom-checkbox rounded-full before:rounded-full save-data">
+                        <span class="text-sm font-medium">No</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-12 gap-4 mb-5">
+                <div class="sm:col-span-6 flex flex-col gap-1">
+                    <label for="test-name" class="text-xs text-slate-400 uppercase tracking-wide">Test Name</label>
+                    <input type="text" id="test-name" class="tracker-input save-data" placeholder="e.g. Physics Mock Test">
+                </div>
+                <div class="sm:col-span-3 flex flex-col gap-1">
+                    <label for="score" class="text-xs text-slate-400 uppercase tracking-wide">Score</label>
+                    <input type="text" id="score" class="tracker-input save-data" placeholder="e.g. 85/100">
+                </div>
+                <div class="sm:col-span-3 flex flex-col gap-1">
+                    <label for="accuracy" class="text-xs text-slate-400 uppercase tracking-wide">Accuracy</label>
+                    <input type="text" id="accuracy" class="tracker-input save-data" placeholder="e.g. 90%">
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-1">
+                <label for="mistake" class="text-xs text-amber-500 uppercase tracking-wide font-semibold">1 Mistake I Must Not Repeat</label>
+                <input type="text" id="mistake" class="tracker-input border-amber-900/30 focus:border-amber-500 save-data" placeholder="Note down your mistake here...">
+            </div>
+        </div>
+
+        <!-- Improvements Section -->
+        <div class="mb-10">
+            <div class="flex flex-col gap-2">
+                <h2 class="text-lg font-semibold text-green-400 uppercase tracking-wider text-sm flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>
+                    Today I Improved At:
+                </h2>
+                <input type="text" id="improvement" class="tracker-input save-data border-green-900/30 focus:border-green-500" placeholder="e.g. Time management during test">
+            </div>
+        </div>
+
+        <!-- Notes Section -->
+        <div class="bg-slate-800/30 p-5 rounded-2xl border border-slate-700/50 mb-2">
+            <h2 class="text-lg font-semibold mb-3 text-indigo-400 uppercase tracking-wider text-sm flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                Notes / Reminders
+            </h2>
+            <textarea 
+                id="notes"
+                class="w-full bg-slate-900/50 border border-slate-700 rounded-xl outline-none resize-none leading-relaxed text-slate-200 save-data p-4 focus:border-indigo-500 transition-colors" 
+                rows="4" 
+                placeholder="Write your thoughts or reminders for tomorrow..."
+            ></textarea>
+        </div>
+
+    </div>
+
+    <!-- ========================================== -->
+    <!--                  JAVASCRIPT                -->
+    <!-- ========================================== -->
+    <script>
+        // DOM Elements
+        const datePicker = document.getElementById('date-picker');
+        const btnPrevDay = document.getElementById('btn-prev-day');
+        const btnNextDay = document.getElementById('btn-next-day');
+        
+        const allInputs = document.querySelectorAll('.save-data');
+        const loadingOverlay = document.getElementById('loading-overlay');
+        
+        // Save Indicator Elements
+        const saveIndicatorText = document.getElementById('save-text');
+        const saveIndicatorDot = document.getElementById('save-dot');
+
+        let saveTimeout = null;
+
+        // Auto-resize notes textarea
+        const notesTextarea = document.getElementById('notes');
+        notesTextarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+
+        // Date Formatter: YYYY-MM-DD
+        function getLocalYYYYMMDD(date) {
+            const offset = date.getTimezoneOffset() * 60000;
+            return (new Date(date - offset)).toISOString().split('T')[0];
+        }
+
+        // Initialize Date to Today
+        datePicker.value = getLocalYYYYMMDD(new Date());
+
+        // Change date by given offset (-1 or +1)
+        function changeDateByOffset(offset) {
+            if(!datePicker.value) return;
+            const currentDate = new Date(datePicker.value);
+            currentDate.setDate(currentDate.getDate() + offset);
+            datePicker.value = getLocalYYYYMMDD(currentDate);
+            // Trigger change event to load data
+            datePicker.dispatchEvent(new Event('change'));
+        }
+
+        btnPrevDay.addEventListener('click', () => changeDateByOffset(-1));
+        btnNextDay.addEventListener('click', () => changeDateByOffset(1));
+
+        // Load data from LocalStorage based on selected Date
+        function loadDataForDate(dateStr) {
+            // Reset all inputs first
+            allInputs.forEach(input => {
+                if (input.type === 'checkbox' || input.type === 'radio') {
+                    input.checked = false;
+                } else {
+                    input.value = '';
+                }
+            });
+
+            // Fetch from local storage
+            const savedData = localStorage.getItem('study_tracker_' + dateStr);
+            
+            if (savedData) {
+                try {
+                    const data = JSON.parse(savedData);
+                    allInputs.forEach(input => {
+                        if (data[input.id] !== undefined) {
+                            if (input.type === 'checkbox' || input.type === 'radio') {
+                                input.checked = data[input.id];
+                            } else {
+                                input.value = data[input.id];
+                            }
+                        }
+                    });
+                } catch (e) {
+                    console.error("Local storage data load error", e);
+                }
+            }
+            
+            // Trigger resize for textarea
+            if (notesTextarea.value) {
+                notesTextarea.dispatchEvent(new Event('input'));
+            }
+        }
+
+        // Save data to LocalStorage for selected Date
+        function saveToLocalStorage() {
+            const dateStr = datePicker.value;
+            if (!dateStr) return;
+
+            const dataToSave = {};
+            allInputs.forEach(input => {
+                if (input.type === 'checkbox' || input.type === 'radio') {
+                    dataToSave[input.id] = input.checked;
+                } else {
+                    dataToSave[input.id] = input.value;
+                }
+            });
+
+            try {
+                localStorage.setItem('study_tracker_' + dateStr, JSON.stringify(dataToSave));
+                
+                // Update UI to show Success
+                saveIndicatorText.textContent = "Saved";
+                saveIndicatorDot.classList.remove('bg-amber-500', 'animate-pulse');
+                saveIndicatorDot.classList.add('bg-green-500', 'shadow-[0_0_5px_#22c55e]');
+
+            } catch (error) {
+                console.error("Error saving data:", error);
+                saveIndicatorText.textContent = "Error";
+                saveIndicatorDot.classList.replace('bg-amber-500', 'bg-red-500');
+            }
+        }
+
+        // Handle input changes (Debounced saving)
+        function handleInput() {
+            // Update UI to show Saving state
+            saveIndicatorText.textContent = "Saving...";
+            saveIndicatorDot.classList.remove('bg-green-500', 'shadow-[0_0_5px_#22c55e]', 'bg-red-500');
+            saveIndicatorDot.classList.add('bg-amber-500', 'animate-pulse');
+            
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+                saveToLocalStorage();
+            }, 500); // 500ms delay for local storage
+        }
+
+        // Attach listeners to all trackable inputs
+        allInputs.forEach(input => {
+            input.addEventListener('input', handleInput);
+            input.addEventListener('change', handleInput); 
+        });
+
+        // Load specific date's data when calendar changes
+        datePicker.addEventListener('change', (e) => {
+            if (e.target.value) {
+                loadDataForDate(e.target.value);
+            }
+        });
+
+        // Initialize application on load
+        loadDataForDate(datePicker.value);
+
+    </script>
+</body>
+</html>
