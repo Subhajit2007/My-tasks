@@ -95,7 +95,8 @@
             border: 1px solid var(--border);
         }
         .tab-btn.active { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(59,130,246,0.4); border-color: var(--primary); }
-        .tab-btn:hover:not(.active) { background: #334155; color: #fff; }
+        /* Changed hover to active for mobile */
+        .tab-btn:active:not(.active) { background: #334155; color: #fff; transform: scale(0.96); }
 
         /* SYLLABUS LIST */
         .syllabus-section { display: none; }
@@ -116,9 +117,10 @@
             align-items: center;
             cursor: pointer;
             background: var(--card);
-            transition: background 0.2s;
+            transition: all 0.2s;
         }
-        .chapter-header:hover { background: #253346; }
+        /* Changed hover to active for mobile */
+        .chapter-header:active { background: #253346; }
         
         .chapter-title { font-weight: 600; font-size: 1.05rem; }
         .chapter-progress { font-size: 0.8rem; color: #cbd5e1; background: #334155; padding: 4px 8px; border-radius: 4px; }
@@ -163,7 +165,8 @@
             flex-direction: column;
             align-items: center;
             cursor: pointer;
-            gap: 4px;
+            gap: 6px;
+            -webkit-tap-highlight-color: transparent; /* Removes blue highlight on Android */
         }
 
         .task-text {
@@ -174,13 +177,53 @@
             letter-spacing: 0.5px;
             text-align: center;
             max-width: 60px;
+            transition: color 0.2s;
         }
 
-        input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-            accent-color: var(--success);
+        /* NEW ROUND CHECKBOX UI */
+        .task-option input[type="checkbox"] {
+            display: none; /* Hide default square checkbox */
+        }
+
+        .custom-checkbox {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid #475569;
+            background: var(--card);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* The Checkmark */
+        .custom-checkbox::after {
+            content: '';
+            width: 5px;
+            height: 11px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg) scale(0);
+            transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-bottom: 2px;
+        }
+
+        /* Checked State */
+        .task-option input[type="checkbox"]:checked + .custom-checkbox {
+            background: var(--success);
+            border-color: var(--success);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+        }
+
+        .task-option input[type="checkbox"]:checked + .custom-checkbox::after {
+            transform: rotate(45deg) scale(1);
+        }
+
+        /* Active animation for phone tapping */
+        .task-option:active .custom-checkbox {
+            transform: scale(0.85);
         }
         
         .topic-item.fully-done .topic-label {
@@ -204,7 +247,7 @@
             .stat-card:nth-child(5) { grid-column: 1 / -1; }
             h1 { font-size: 1.5rem; }
             .topic-item { align-items: flex-start; flex-direction: column; }
-            .task-group { margin-top: 5px; align-self: flex-start; justify-content: flex-start; gap: 10px; }
+            .task-group { margin-top: 5px; align-self: flex-start; justify-content: flex-start; gap: 12px; }
         }
     </style>
 
@@ -361,7 +404,7 @@
                 const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
                 // Format numbers to always have 2 digits (e.g., 05s instead of 5s)
-                const d = days; // Days can be 3 digits
+                const d = days; 
                 const h = hours < 10 ? "0" + hours : hours;
                 const m = minutes < 10 ? "0" + minutes : minutes;
                 const s = seconds < 10 ? "0" + seconds : seconds;
@@ -376,7 +419,7 @@
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('active');
                 if (btn.innerText.toLowerCase().includes(subject === 'maths' ? 'math' : subject)) {
-                    btn.classList.add('active');
+                                        btn.classList.add('active');
                 }
             });
 
@@ -387,7 +430,7 @@
             chapters.forEach((chapter, index) => {
                 const chapterId = `${subject}_c${index}`;
                 
-                // Calculate chapter progress (Units of 8 now)
+                // Calculate chapter progress
                 let completedUnits = 0;
                 let totalUnits = chapter.topics.length * 8;
 
@@ -410,7 +453,7 @@
                 chapterDiv.className = 'chapter';
                 chapterDiv.id = `chap_${chapterId}`; 
                 
-                          const header = document.createElement('div');
+                const header = document.createElement('div');
                 header.className = 'chapter-header';
                 header.innerHTML = `
                     <span class="chapter-title"><span class="badge" style="background:${getSubjectColor(subject)}"></span>${chapter.title}</span>
@@ -453,21 +496,28 @@
                     const group = document.createElement('div');
                     group.className = 'task-group';
 
-                    // HELPER TO CREATE SUB-TASK
+                    // HELPER TO CREATE SUB-TASK WITH ROUND UI
                     const createSubTask = (suffix, labelText) => {
                         const wrapper = document.createElement('label');
                         wrapper.className = 'task-option';
                         
+                        // Hidden Native Checkbox
                         const cb = document.createElement('input');
                         cb.type = 'checkbox';
                         cb.id = `${topicId}_${suffix}`;
                         cb.checked = progressData[`${topicId}_${suffix}`] || false;
                         
-                        // Add elements to DOM
+                        // New Custom Round Checkbox Div
+                        const customCheck = document.createElement('div');
+                        customCheck.className = 'custom-checkbox';
+
+                        // Label Text
                         const txt = document.createElement('span');
                         txt.className = 'task-text';
                         txt.innerText = labelText;
+                        
                         wrapper.appendChild(cb);
+                        wrapper.appendChild(customCheck);
                         wrapper.appendChild(txt);
 
                         return { wrapper, cb };
@@ -482,7 +532,7 @@
                     const t7 = createSubTask('ana', 'Test Analysis');
                     const t8 = createSubTask('fin', 'Final Revision');
 
-                    // --- ROBUST EVENT LISTENER (NO RE-RENDERS) ---
+                    // --- ROBUST EVENT LISTENER ---
                     [t1, t2, t3, t4, t5, t6, t7, t8].forEach(task => {
                         task.cb.addEventListener('change', (e) => {
                             // 1. Update Data
@@ -537,7 +587,6 @@
 
             const percent = totalUnits === 0 ? 0 : Math.round((completedUnits / totalUnits) * 100);
             
-            // Safer way: just update the progress span inside the header
             const progSpan = headerEl.querySelector('.chapter-progress');
             if(progSpan) progSpan.innerText = `${percent}%`;
         }
