@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Planner Pro</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: '#6366f1',
+                        darkBg: '#000000',
+                        cardBg: '#121212',
+                        cardBorder: '#2a2a2a',
+                        textMain: '#e2e8f0',
+                        textMuted: '#94a3b8'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #000000; 
+            color: #e2e8f0;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .mobile-container {
+            max-width: 480px;
+            margin: 0 auto;
+            background: #000000;
+            min-height: 100vh;
+        }
+
+        .card {
+            background: #121212;
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border: 1px solid #2a2a2a;
+        }
+
+        .section-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        /* Inputs */
+        .clean-input {
+            width: 100%;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid #333;
+            padding: 8px 4px;
+            outline: none;
+            color: white;
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+        .clean-input:focus { border-bottom-color: #6366f1; }
+        
+        /* Checkbox */
+        .task-checkbox {
+            appearance: none;
+            width: 22px;
+            height: 22px;
+            border: 2px solid #555;
+            border-radius: 6px;
+            outline: none;
+            cursor: pointer;
+            position: relative;
+            flex-shrink: 0;
+        }
+        .task-checkbox:checked {
+            background-color: #6366f1;
+            border-color: #6366f1;
+        }
+        .task-checkbox:checked::after {
+            content: '\f00c';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            color: white;
+            position: absolute;
+            font-size: 12px;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Grey to Color Icon Logic */
+        .icon-wrapper {
+            filter: grayscale(100%) brightness(0.6);
+            transition: all 0.3s ease;
+            padding: 8px;
+            border-radius: 12px;
+            border: 1px solid transparent;
+        }
+        .icon-radio:checked + .icon-wrapper {
+            filter: grayscale(0%) brightness(1);
+            transform: scale(1.15);
+            background: rgba(255, 255, 255, 0.05);
+            border-color: #333;
+        }
+        .icon-radio:checked + .icon-wrapper i {
+            filter: drop-shadow(0 0 8px currentColor);
+        }
+        
+        /* Timeline */
+        .timeline-wrapper {
+            height: 350px;
+            overflow-y: auto;
+            position: relative;
+            border-radius: 12px;
+            background: #111;
+            border: 1px solid #333;
+            padding-top: 15px;
+        }
+        .time-slot {
+            height: 50px;
+            border-bottom: 1px solid #2a2a2a;
+            position: relative;
+        }
+        .time-label {
+            position: absolute;
+            top: -8px;
+            left: 8px;
+            font-size: 0.7rem;
+            color: #94a3b8;
+            background: #111;
+            padding: 0 4px;
+            font-weight: 600;
+        }
+        .timeline-wrapper::-webkit-scrollbar { display: none; }
+        
+        /* Water Animation */
+        @keyframes fillWater {
+            0% { transform: scale(0.9); opacity: 0.7; }
+            50% { transform: scale(1.15); color: #60a5fa; }
+            100% { transform: scale(1); color: #3b82f6; text-shadow: 0 0 12px rgba(59, 130, 246, 0.8); }
+        }
+        .water-glass { font-size: 26px; color: #333; transition: color 0.3s; }
+        .water-glass.filled { animation: fillWater 0.4s ease forwards; }
+
+        button:active, .action-btn:active { transform: scale(0.95); opacity: 0.8; }
+        ::-webkit-calendar-picker-indicator { filter: invert(1); }
+    </style>
+</head>
+<body>
+
+    <div class="mobile-container p-4">
+        
+        <!-- Header: Date Navigation -->
+        <div class="mb-6">
+            <h1 class="text-3xl font-bold text-white mb-4">Daily Plan</h1>
+            
+            <div class="flex items-center justify-between bg-cardBg border border-cardBorder p-3 rounded-2xl shadow-lg">
+                <button id="btn-prev" class="p-3 text-brand text-xl action-btn"><i class="fa-solid fa-chevron-left"></i></button>
+                <div class="text-center flex-1">
+                    <input type="date" id="main-date" class="bg-transparent text-white font-bold text-lg outline-none text-center w-full block">
+                    <div id="day-display" class="text-sm font-semibold mt-1"></div>
+                </div>
+                <button id="btn-next" class="p-3 text-brand text-xl action-btn"><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+        </div>
+
+        <!-- Weather (7 Options, Grey by default) -->
+        <div class="card overflow-x-auto">
+            <h2 class="section-title">Weather</h2>
+            <div class="flex justify-between items-end gap-2 min-w-max px-1" id="weather-container">
+                <label class="cursor-pointer text-center">
+                    <input type="radio" name="weather" value="sunny" class="icon-radio hidden">
+                    <div class="icon-wrapper"><i class="fa-solid fa-sun text-yellow-500 text-2xl"></i><div class="text-[9px] text-gray-400 mt-1">Sunny</div></div>
+                </label>
+                <label class="cursor-pointer text-center">
+                    <input type="radio" name="weather" value="cloud-sun" class="icon-radio hidden">
+                    <div class="icon-wrapper"><i class="fa-solid fa-cloud-sun text-orange-400 text-2xl"></i><div class="text-[9px] text-gray-400 mt-1">P.Cloudy</div></div>
+                </label>
+                <label class="cursor-pointer text-center">
+                    <input type="radio" name="weather" value="cloudy" class="icon-radio hidden">
+                    <div class="icon-wrapper"><i class="fa-solid fa-cloud text-gray-300 text-2xl"></i><div class="text-[9px] text-gray-400 mt-1">Cloudy</div></div>
+                </label>
+                <label class="cursor-pointer text-center">
+                    <input type="radio" name="weather" value="rain" class="icon-radio hidden">
+                    <div class="icon-wrapper"><i class="fa-solid fa-cloud-showers-heavy text-blue-400 text-2xl"></i><div class="text-[9px] text-gray-400 mt-1">Rain</div></div>
+                </label>
+                <label class="cursor-pointer text-center">
+                    <input type="radio" name="weather" value="storm" class="icon-radio hidden">
+                    <div class="icon-wrapper"><i class="fa-solid fa-cloud-bolt text-purple-500 text-2xl"></i><div class="text-[9px] text-gray-400 mt-1">Storm</div></div>
+                </label>
+                <label class="cursor-pointer text-center">
+                    <input type="radio" name="weather" value="snow" class="icon-radio hidden">
+                    <div class="icon-wrapper"><i class="fa-solid fa-snowflake text-cyan-300 text-2xl"></i><div class="text-[9px] text-gray-400 mt-1">Snow</div></div>
+                </label>
+                <label class="cursor-pointer text-center">
+                    <input type="radio" name="weather" value="wind" class="icon-radio hidden">
+                    <div class="icon-wrapper"><i class="fa-solid fa-wind text-teal-300 text-2xl"></i><div class="text-[9px] text-gray-400 mt-1">Wind</div></div>
+                </label>
+            </div>
+        </div>
+
+        <!-- Tasks Sections (Dynamic Lists) -->
+        <div class="card">
+            <h2 class="section-title text-red-500"><i class="fa-solid fa-star mr-2"></i>Priorities</h2>
+            <div class="space-y-3 list-container" id="priorities-container" data-group="priorities"></div>
+        </div>
+
+        <div class="card">
+            <h2 class="section-title text-brand"><i class="fa-solid fa-list-check mr-2"></i>To Do List</h2>
+            <div class="space-y-3 list-container" id="todos-container" data-group="todos"></div>
+        </div>
+
+        <div class="card">
+            <h2 class="section-title text-green-500"><i class="fa-solid fa-check-double mr-2"></i>Done</h2>
+            <div class="space-y-3 list-container" id="done-container" data-group="thingsDone"></div>
+        </div>
+
+        <!-- Schedule (24 Hrs) -->
+        <div class="card">
+            <h2 class="section-title"><i class="fa-solid fa-calendar-day mr-2"></i>Schedule (24 Hrs)</h2>
+            
+            <div class="bg-[#1a1a1a] p-3 rounded-xl border border-[#333] mb-4 flex flex-col gap-3">
+                <input type="text" id="ev-title" placeholder="Event Name" class="clean-input !border-[#444] bg-[#222] rounded px-2">
+                <div class="flex gap-2">
+                    <input type="time" id="ev-start" class="clean-input !border-[#444] bg-[#222] rounded px-2 text-sm">
+                    <input type="time" id="ev-end" class="clean-input !border-[#444] bg-[#222] rounded px-2 text-sm">
+                </div>
+                <button onclick="addEvent()" class="bg-brand text-white rounded-lg p-3 font-semibold action-btn"><i class="fa-solid fa-plus mr-1"></i> Add Event</button>
+            </div>
+
+            <div class="timeline-wrapper" id="timeline-scroll">
+                <div class="relative w-full" id="timeline-grid" style="height: 1200px;">
+                    <!-- Rendered by JS -->
+                </div>
+            </div>
+            <p class="text-[11px] text-[#666] mt-3 text-center font-semibold"><i class="fa-solid fa-hand-pointer mr-1"></i> Triple tap an event to delete it.</p>
+        </div>
+
+        <!-- Finances & Meals (Restored 2-column Grid) -->
+        <div class="grid grid-cols-2 gap-4 mb-4">
+            
+            <!-- Money Card -->
+            <div class="card !mb-0 bg-[#0a150f] border-green-900/30 p-4 flex flex-col justify-between">
+                <div>
+                    <h2 class="section-title text-green-500 mb-3"><i class="fa-solid fa-wallet mr-2"></i>Money</h2>
+                    <div class="space-y-3">
+                        <div class="flex items-center text-sm"><span class="font-bold text-green-500 w-8">In+</span><input type="number" id="money-in" class="clean-input !py-1 text-green-400"></div>
+                        <div class="flex items-center text-sm"><span class="font-bold text-red-500 w-8">Out-</span><input type="number" id="money-out" class="clean-input !py-1 text-red-400"></div>
+                    </div>
+                </div>
+                <div id="profit-display" class="mt-4 p-1.5 rounded bg-[#112217] text-center font-bold text-[11px] border border-green-900/50 text-gray-300">
+                    ₹0
+                </div>
+            </div>
+            
+            <!-- Meals Card -->
+            <div class="card !mb-0 bg-[#1a1005] border-orange-900/30 p-4">
+                <h2 class="section-title text-orange-500 mb-3"><i class="fa-solid fa-utensils mr-2"></i>Meals</h2>
+                <div class="space-y-3">
+                    <div class="flex items-center text-sm"><span class="font-bold text-orange-700 w-5">B</span><input type="text" id="meal-b" class="clean-input !py-1"></div>
+                    <div class="flex items-center text-sm"><span class="font-bold text-orange-700 w-5">L</span><input type="text" id="meal-l" class="clean-input !py-1"></div>
+                    <div class="flex items-center text-sm"><span class="font-bold text-orange-700 w-5">D</span><input type="text" id="meal-d" class="clean-input !py-1"></div>
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- Health & Steps -->
+        <div class="card">
+            <h2 class="section-title text-blue-500"><i class="fa-solid fa-person-running mr-2"></i>Health & Exercise</h2>
+            <div class="flex flex-col gap-4">
+                <textarea id="exercise" placeholder="Exercise plan..." class="w-full h-24 clean-input resize-none bg-[#1a1a1a] rounded p-2 text-sm leading-relaxed"></textarea>
+                
+                <div>
+                    <div class="flex items-center bg-[#1a1a1a] rounded p-2 border border-[#333]">
+                        <i class="fa-solid fa-shoe-prints text-blue-500 mr-3 ml-2"></i>
+                        <input type="number" id="steps" placeholder="Total steps (e.g. 10000)" class="w-full outline-none bg-transparent text-sm text-white">
+                    </div>
+                    <div class="text-[11px] text-blue-400/60 mt-1 ml-1"><i class="fa-solid fa-circle-info mr-1"></i>1 km &approx; 1300 to 1400 steps</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="card">
+            <h2 class="section-title"><i class="fa-solid fa-pen mr-2"></i>Notes & Comments</h2>
+            <textarea id="notes" class="w-full h-28 clean-input resize-none bg-[#1a1a1a] rounded p-3 text-sm" placeholder="Write your notes here..."></textarea>
+        </div>
+
+        <!-- Water Tracker -->
+        <div class="card text-center bg-[#050f1a] border-blue-900/30">
+            <div class="flex justify-between items-center mb-5">
+                <h2 class="section-title !mb-0 text-blue-500"><i class="fa-solid fa-droplet mr-2"></i>Water</h2>
+                <span class="text-[10px] bg-blue-900/50 border border-blue-800 text-blue-300 px-2 py-1 rounded-full font-bold">1 Glass = 300ml</span>
+            </div>
+            <div class="flex flex-wrap justify-center gap-3" id="water-container">
+                <!-- Glasses rendered by JS -->
+            </div>
+        </div>
+
+        <!-- Mood Tracker (Grey by default, color on click) -->
+        <div class="card text-center mb-8">
+            <h2 class="section-title"><i class="fa-solid fa-masks-theater mr-2"></i>Mood</h2>
+            <div class="flex justify-between items-center px-1 mt-4">
+                <label class="cursor-pointer">
+                    <input type="radio" name="mood" value="angry" class="icon-radio hidden">
+                    <div class="icon-wrapper"><i class="fa-solid fa-face-angry text-red-500 text-3xl"></i></div>
+                </label>
+                <label class="cursor-pointer">
+                    <input type="radio" name="mood" value="sad" class="icon-radio hidden">
+                    <div class="icon-wrapper"><i class="fa-solid fa-face-frown text-orange-500 text-3xl"></i></div>
+                </label>
+                <label class="cursor-pointer">
+                    <input type="radio" name="mood" value="neutral" class="icon-radio hidden">
+                    <div class="icon-wrapper"><i class="fa-solid fa-face-meh text-yellow-400 text-3xl"></i></div>
+                </label>
+                <label class="cursor-pointer">
+                    <input type="radio" name="mood" value="happy" class="icon-radio hidden">
+                    <div class="icon-wrapper"><i class="fa-solid fa-face-smile text-green-400 text-3xl"></i></div>
+                </label>
+                <label class="cursor-pointer">
+                    <input type="radio" name="mood" value="vhappy" class="icon-radio hidden">
+                    <div class="icon-wrapper"><i class="fa-solid fa-face-laugh-beam text-brand text-3xl"></i></div>
+                </label>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'AMOLEDPlannerData_v2';
+        const eventColors = [
+            'bg-blue-900/60 text-blue-100 border-blue-500', 
+            'bg-purple-900/60 text-purple-100 border-purple-500', 
+            'bg-emerald-900/60 text-emerald-100 border-emerald-500', 
+            'bg-pink-900/60 text-pink-100 border-pink-500',
+            'bg-orange-900/60 text-orange-100 border-orange-500'
+        ];
+        const dayNamesArray = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+        let appData = {};
+        
+        function getEmptyData() {
+            return {
+                date: '', weather: '',
+                priorities: Array(3).fill({ checked: false, text: '' }),
+                todos: Array(3).fill({ checked: false, text: '' }),
+                thingsDone: Array(3).fill({ checked: false, text: '' }),
+                events: [],
+                finances: { in: '', out: '' },
+                meals: { b: '', l: '', d: '' },
+                health: { exercise: '', steps: '', notes: '' },
+                water: 0, mood: ''
+            };
+        }
+
+        // --- Core UI Initialization ---
+        function initApp() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                appData = JSON.parse(saved);
+                ['priorities', 'todos', 'thingsDone'].forEach(k => {
+                    if(!appData[k] || appData[k].length < 3) appData[k] = Array(3).fill({ checked: false, text: '' });
+                });
+            } else {
+                appData = getEmptyData();
+                // Check old version data
+                const oldSaved = localStorage.getItem('AMOLEDPlannerData_v1');
+                if(oldSaved) {
+                    appData = JSON.parse(oldSaved);
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+                }
+            }
+
+            const dateInput = document.getElementById('main-date');
+            if(!appData.date) {
+                const today = new Date();
+                const yyyy = today.getFullYear();
+                const mm = String(today.getMonth() + 1).padStart(2, '0');
+                const dd = String(today.getDate()).padStart(2, '0');
+                appData.date = `${yyyy}-${mm}-${dd}`;
+            }
+            dateInput.value = appData.date;
+            updateDayDisplay();
+
+            renderTimelineBackground();
+            renderWaterGlasses();
+            
+            bindDataToUI();
+            setupDynamicLists();
+            setupEventListeners();
+        }
+
+        function updateDayDisplay() {
+            const dateVal = document.getElementById('main-date').value;
+            const display = document.getElementById('day-display');
+            if(dateVal) {
+                const d = new Date(dateVal);
+                const dayIndex = d.getDay();
+                display.innerText = dayNamesArray[dayIndex];
+                if(dayIndex === 0) display.className = "text-sm font-bold mt-1 text-red-500";
+                else display.className = "text-sm font-semibold mt-1 text-slate-400";
+            }
+        }
+
+        function renderTimelineBackground() {
+            let timeHtml = '';
+            for(let i=0; i<24; i++) {
+                let displayHour = (i + 6) % 24;
+                let ampm = displayHour >= 12 ? 'PM' : 'AM';
+                let formattedHour = displayHour % 12 || 12;
+                timeHtml += `
+                <div class="time-slot">
+                    <span class="time-label">${formattedHour}:00 ${ampm}</span>
+                </div>`;
+            }
+                        document.getElementById('timeline-grid').innerHTML = timeHtml;
+        }
+
+        function renderWaterGlasses() {
+            let waterHtml = '';
+            for(let i=1; i<=8; i++) {
+                waterHtml += `<i class="fa-solid fa-glass-water water-glass cursor-pointer p-1" id="glass-${i}" onclick="setWater(${i})"></i>`;
+            }
+            document.getElementById('water-container').innerHTML = waterHtml;
+        }
+
+        function renderGroupList(groupId) {
+            const container = document.querySelector(`[data-group="${groupId}"]`);
+            container.innerHTML = '';
+            appData[groupId].forEach((item, idx) => {
+                const row = document.createElement('div');
+                row.className = 'flex items-center gap-3 list-row';
+                row.innerHTML = `
+                    <input type="checkbox" class="task-checkbox app-input list-chk" data-group="${groupId}" data-idx="${idx}" ${item.checked ? 'checked' : ''}>
+                    <input type="text" class="clean-input !py-1 list-txt" data-group="${groupId}" data-idx="${idx}" value="${item.text || ''}">
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function setupDynamicLists() {
+            ['priorities', 'todos', 'thingsDone'].forEach(g => renderGroupList(g));
+
+            document.querySelectorAll('.list-container').forEach(container => {
+                container.addEventListener('input', (e) => {
+                    const target = e.target;
+                    if(target.classList.contains('list-txt')) {
+                        const groupId = target.dataset.group;
+                        const idx = parseInt(target.dataset.idx);
+                        appData[groupId][idx].text = target.value;
+                        
+                        const allRows = container.querySelectorAll('.list-row');
+                        if (idx === allRows.length - 1 && target.value.trim() !== '') {
+                            appData[groupId].push({ checked: false, text: '' });
+                            renderGroupList(groupId); 
+                            const inputs = container.querySelectorAll('.list-txt');
+                            inputs[idx].focus();
+                            const val = inputs[idx].value;
+                            inputs[idx].value = '';
+                            inputs[idx].value = val;
+                        }
+                        saveData();
+                    }
+                });
+
+                container.addEventListener('change', (e) => {
+                    if(e.target.classList.contains('list-chk')) {
+                        const groupId = e.target.dataset.group;
+                        const idx = parseInt(e.target.dataset.idx);
+                        appData[groupId][idx].checked = e.target.checked;
+                        saveData();
+                    }
+                });
+            });
+        }
+
+        function bindDataToUI() {
+            if(appData.weather) { let w = document.querySelector(`input[name="weather"][value="${appData.weather}"]`); if(w) w.checked = true; }
+            if(appData.mood) { let m = document.querySelector(`input[name="mood"][value="${appData.mood}"]`); if(m) m.checked = true; }
+            
+            ['money-in', 'money-out'].forEach((id, i) => { document.getElementById(id).value = Object.values(appData.finances)[i] || ''; });
+            ['meal-b', 'meal-l', 'meal-d'].forEach((id, i) => { document.getElementById(id).value = Object.values(appData.meals)[i] || ''; });
+            ['exercise', 'steps', 'notes'].forEach((id) => { document.getElementById(id).value = appData.health[id] || ''; });
+
+            updateWaterUI(appData.water);
+            calcProfitLoss();
+            renderEvents();
+        }
+
+        function saveData() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+        }
+
+        function setupEventListeners() {
+            document.getElementById('btn-prev').addEventListener('click', () => changeDate(-1));
+            document.getElementById('btn-next').addEventListener('click', () => changeDate(1));
+            
+            document.getElementById('main-date').addEventListener('change', (e) => {
+                appData.date = e.target.value;
+                updateDayDisplay();
+                saveData();
+            });
+
+            document.addEventListener('input', (e) => {
+                const t = e.target;
+                if(t.name === 'weather') appData.weather = t.value;
+                if(t.name === 'mood') appData.mood = t.value;
+                
+                if(['money-in', 'money-out'].includes(t.id)) {
+                    let keys = ['in', 'out'];
+                    appData.finances[keys[['money-in', 'money-out'].indexOf(t.id)]] = t.value;
+                    calcProfitLoss();
+                }
+                if(t.id.startsWith('meal-')) appData.meals[t.id.split('-')[1]] = t.value;
+                if(['exercise', 'steps', 'notes'].includes(t.id)) appData.health[t.id] = t.value;
+                
+                if(t.id !== 'ev-title' && t.id !== 'ev-start' && t.id !== 'ev-end') saveData();
+            });
+        }
+
+        function changeDate(days) {
+            const dateInput = document.getElementById('main-date');
+            if(!dateInput.value) return;
+            const current = new Date(dateInput.value);
+            current.setDate(current.getDate() + days);
+            const yyyy = current.getFullYear();
+            const mm = String(current.getMonth() + 1).padStart(2, '0');
+            const dd = String(current.getDate()).padStart(2, '0');
+            dateInput.value = `${yyyy}-${mm}-${dd}`;
+            appData.date = dateInput.value;
+            updateDayDisplay();
+            saveData();
+        }
+
+        function calcProfitLoss() {
+            const inVal = parseFloat(document.getElementById('money-in').value) || 0;
+            const outVal = parseFloat(document.getElementById('money-out').value) || 0;
+            const diff = inVal - outVal;
+            const display = document.getElementById('profit-display');
+            
+            display.innerHTML = `₹${Math.abs(diff)}`;
+            if(diff > 0) { display.className = "mt-3 p-1.5 rounded bg-green-900/30 text-center font-bold text-[11px] border border-green-700/50 text-green-400"; display.innerHTML = `Profit: +₹${diff}`; }
+            else if(diff < 0) { display.className = "mt-3 p-1.5 rounded bg-red-900/30 text-center font-bold text-[11px] border border-red-700/50 text-red-400"; display.innerHTML = `Loss: -₹${Math.abs(diff)}`; }
+            else { display.className = "mt-3 p-1.5 rounded bg-[#112217] text-center font-bold text-[11px] border border-gray-700/50 text-gray-400"; display.innerHTML = `Profit/Loss: ₹0`; }
+        }
+
+        function setWater(num) {
+            if (appData.water === num) appData.water = num - 1; 
+            else appData.water = num;
+            updateWaterUI(appData.water);
+            saveData();
+        }
+
+        function updateWaterUI(count) {
+            for(let i=1; i<=8; i++) {
+                const glass = document.getElementById(`glass-${i}`);
+                if(i <= count) { glass.classList.add('filled'); }
+                else { glass.classList.remove('filled'); }
+            }
+        }
+
+        function timeToMinutes(timeStr) {
+            if(!timeStr) return 0;
+            let [h, m] = timeStr.split(':').map(Number);
+            if (h < 6) h += 24; 
+            return (h - 6) * 60 + m; 
+        }
+
+        function addEvent() {
+            const title = document.getElementById('ev-title').value;
+            const start = document.getElementById('ev-start').value;
+            const end = document.getElementById('ev-end').value;
+
+            if(!title || !start || !end) return alert("Fill all event fields!");
+            let startMin = timeToMinutes(start);
+            let endMin = timeToMinutes(end);
+            if(endMin <= startMin) return alert("End time must be after Start time!");
+
+            const colorClass = eventColors[Math.floor(Math.random() * eventColors.length)];
+            appData.events.push({ id: Date.now(), title, start, end, startMin, endMin, colorClass });
+
+            document.getElementById('ev-title').value = '';
+            document.getElementById('ev-start').value = '';
+            document.getElementById('ev-end').value = '';
+
+            saveData(); renderEvents();
+        }
+
+        let tapCounts = {};
+        let tapTimers = {};
+        
+        window.handleEventTap = function(id) {
+            tapCounts[id] = (tapCounts[id] || 0) + 1;
+            if(tapCounts[id] >= 3) {
+                appData.events = appData.events.filter(e => e.id !== id);
+                saveData(); renderEvents();
+                tapCounts[id] = 0;
+                clearTimeout(tapTimers[id]);
+            } else {
+                clearTimeout(tapTimers[id]);
+                tapTimers[id] = setTimeout(() => { tapCounts[id] = 0; }, 600);
+            }
+        };
+
+        function renderEvents() {
+            document.querySelectorAll('.rendered-event').forEach(el => el.remove());
+            const container = document.getElementById('timeline-grid');
+            
+            appData.events.forEach(ev => {
+                const topPos = (ev.startMin * (50/60)) + 15; 
+                const height = (ev.endMin - ev.startMin) * (50/60);
+
+                const formatTime = (time) => {
+                    let [h, m] = time.split(':');
+                    let ampm = h >= 12 ? 'PM' : 'AM';
+                    h = h % 12 || 12;
+                    return `${h}:${m} ${ampm}`;
+                };
+
+                const el = document.createElement('div');
+                el.className = `rendered-event absolute left-[50px] right-2 rounded border-l-4 p-1.5 text-[10px] leading-tight shadow-md cursor-pointer select-none ${ev.colorClass}`;
+                el.style.top = `${topPos}px`;
+                el.style.height = `${height}px`;
+                el.setAttribute('onclick', `handleEventTap(${ev.id})`);
+                
+                el.innerHTML = `
+                    <div class="font-bold truncate text-[11px]">${ev.title}</div>
+                    <div class="opacity-80 text-[9px] mt-0.5">${formatTime(ev.start)} - ${formatTime(ev.end)}</div>
+                `;
+                container.appendChild(el);
+            });
+        }
+
+        initApp();
+    </script>
+</body>
+</html>
